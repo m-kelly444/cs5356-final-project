@@ -1,18 +1,18 @@
 // schema.ts
-// Database schema using Drizzle ORM (Lecture 11-12)
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+// Database schema using Drizzle ORM for PostgreSQL
+import { pgTable, text, timestamp, varchar, integer, real, boolean } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 
 // Users table
-export const users = sqliteTable('users', {
+export const users = pgTable('users', {
   id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: text('role', { enum: ['user', 'analyst', 'admin'] }).default('user').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(() => new Date()),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
 // User relations
@@ -22,13 +22,13 @@ export const usersRelations = relations(users, ({ many }) => ({
 }));
 
 // User dashboard configurations
-export const dashboards = sqliteTable('dashboards', {
+export const dashboards = pgTable('dashboards', {
   id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   layout: text('layout').notNull(), // JSON string of dashboard layout
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(() => new Date()),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
 // Dashboard relations
@@ -40,16 +40,16 @@ export const dashboardsRelations = relations(dashboards, ({ one }) => ({
 }));
 
 // Vulnerabilities - data from NVD and CISA KEV
-export const vulnerabilities = sqliteTable('vulnerabilities', {
+export const vulnerabilities = pgTable('vulnerabilities', {
   id: text('id').primaryKey(), // CVE ID e.g., CVE-2023-12345
   title: text('title').notNull(),
   description: text('description').notNull(),
   severity: real('severity').notNull(), // CVSS score
-  exploitedInWild: integer('exploited_in_wild', { mode: 'boolean' }).notNull().default(0),
-  publishedDate: integer('published_date', { mode: 'timestamp' }).notNull(),
-  lastModified: integer('last_modified', { mode: 'timestamp' }).notNull(),
-  cisaKevDate: integer('cisa_kev_date', { mode: 'timestamp' }), // Date added to CISA KEV catalog (if applicable)
-  remediationDate: integer('remediation_date', { mode: 'timestamp' }), // CISA required remediation date (if applicable)
+  exploitedInWild: boolean('exploited_in_wild').notNull().default(false),
+  publishedDate: timestamp('published_date').notNull(),
+  lastModified: timestamp('last_modified').notNull(),
+  cisaKevDate: timestamp('cisa_kev_date'), // Date added to CISA KEV catalog (if applicable)
+  remediationDate: timestamp('remediation_date'), // CISA required remediation date (if applicable)
   affectedSystems: text('affected_systems').notNull(), // JSON string of affected systems/software
   attackVector: text('attack_vector'), // MITRE ATT&CK vector if available
   references: text('references').notNull(), // JSON string of reference URLs
@@ -57,7 +57,7 @@ export const vulnerabilities = sqliteTable('vulnerabilities', {
 });
 
 // Threat actors - known APT groups and threat actors
-export const threatActors = sqliteTable('threat_actors', {
+export const threatActors = pgTable('threat_actors', {
   id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
   name: text('name').notNull(),
   aliases: text('aliases'), // JSON string of aliases
@@ -65,8 +65,8 @@ export const threatActors = sqliteTable('threat_actors', {
   nationState: text('nation_state'), // Country associated with the threat actor, if known
   motivations: text('motivations'), // JSON string of motivations (financial, political, etc.)
   sophisticationLevel: text('sophistication_level'), // Level of sophistication
-  firstSeen: integer('first_seen', { mode: 'timestamp' }),
-  lastSeen: integer('last_seen', { mode: 'timestamp' }),
+  firstSeen: timestamp('first_seen'),
+  lastSeen: timestamp('last_seen'),
   associatedGroups: text('associated_groups'), // JSON string of associated groups
   targetedSectors: text('targeted_sectors'), // JSON string of targeted sectors
   targetedRegions: text('targeted_regions'), // JSON string of targeted regions/countries
@@ -75,12 +75,12 @@ export const threatActors = sqliteTable('threat_actors', {
 });
 
 // Recorded cyber attacks - historical attack data
-export const cyberAttacks = sqliteTable('cyber_attacks', {
+export const cyberAttacks = pgTable('cyber_attacks', {
   id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
   title: text('title').notNull(),
   description: text('description').notNull(),
-  attackDate: integer('attack_date', { mode: 'timestamp' }).notNull(),
-  discoveredDate: integer('discovered_date', { mode: 'timestamp' }).notNull(),
+  attackDate: timestamp('attack_date').notNull(),
+  discoveredDate: timestamp('discovered_date').notNull(),
   attackType: text('attack_type').notNull(),
   threatActorId: text('threat_actor_id').references(() => threatActors.id),
   vulnerabilitiesExploited: text('vulnerabilities_exploited'), // JSON string of CVE IDs
@@ -103,7 +103,7 @@ export const cyberAttacksRelations = relations(cyberAttacks, ({ one }) => ({
 }));
 
 // ML prediction models
-export const predictionModels = sqliteTable('prediction_models', {
+export const predictionModels = pgTable('prediction_models', {
   id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
   name: text('name').notNull(),
   description: text('description').notNull(),
@@ -115,16 +115,16 @@ export const predictionModels = sqliteTable('prediction_models', {
   precision: real('precision'),
   recall: real('recall'),
   f1Score: real('f1_score'),
-  trainingDate: integer('training_date', { mode: 'timestamp' }).notNull(),
-  lastUsed: integer('last_used', { mode: 'timestamp' }).notNull().default(() => new Date()),
+  trainingDate: timestamp('training_date').notNull(),
+  lastUsed: timestamp('last_used').notNull().defaultNow(),
   filePath: text('file_path'), // Path to saved model
 });
 
 // Attack predictions
-export const predictions = sqliteTable('predictions', {
+export const predictions = pgTable('predictions', {
   id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
   modelId: text('model_id').notNull().references(() => predictionModels.id),
-  generatedDate: integer('generated_date', { mode: 'timestamp' }).notNull().default(() => new Date()),
+  generatedDate: timestamp('generated_date').notNull().defaultNow(),
   predictedTimeframe: text('predicted_timeframe').notNull(), // e.g., "next_7_days", "next_30_days"
   targetType: text('target_type').notNull(), // E.g., "sector", "organization", "region"
   targetValue: text('target_value').notNull(),
@@ -135,8 +135,8 @@ export const predictions = sqliteTable('predictions', {
   potentialVulnerabilities: text('potential_vulnerabilities'), // JSON string of related CVEs
   explanation: text('explanation'), // Explanation of prediction
   inputFeatures: text('input_features').notNull(), // JSON string of features used for prediction
-  verified: integer('verified', { mode: 'boolean' }).default(0), // Whether prediction was verified (happened or not)
-  verifiedDate: integer('verified_date', { mode: 'timestamp' }),
+  verified: boolean('verified').default(false), // Whether prediction was verified (happened or not)
+  verifiedDate: timestamp('verified_date'),
 });
 
 // Prediction relations
@@ -148,13 +148,13 @@ export const predictionsRelations = relations(predictions, ({ one }) => ({
 }));
 
 // Malicious indicators (e.g., malicious IPs, domains, URLs)
-export const indicators = sqliteTable('indicators', {
+export const indicators = pgTable('indicators', {
   id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
   type: text('type', { enum: ['ip', 'domain', 'url', 'hash', 'email'] }).notNull(),
   value: text('value').notNull(),
   maliciousScore: real('malicious_score').notNull(), // 0-1 score of maliciousness
-  firstSeen: integer('first_seen', { mode: 'timestamp' }).notNull(),
-  lastSeen: integer('last_seen', { mode: 'timestamp' }).notNull(),
+  firstSeen: timestamp('first_seen').notNull(),
+  lastSeen: timestamp('last_seen').notNull(),
   source: text('source').notNull(), // Source of the indicator (e.g., "phishtank", "urlhaus")
   associatedAttackTypes: text('associated_attack_types'), // JSON string of attack types
   tags: text('tags'), // JSON string of tags
@@ -162,7 +162,7 @@ export const indicators = sqliteTable('indicators', {
 });
 
 // User alerts
-export const alerts = sqliteTable('alerts', {
+export const alerts = pgTable('alerts', {
   id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
@@ -171,9 +171,9 @@ export const alerts = sqliteTable('alerts', {
   type: text('type', { enum: ['vulnerability', 'attack', 'prediction', 'indicator'] }).notNull(),
   relatedItemId: text('related_item_id'), // ID of the related item (CVE ID, attack ID, etc.)
   relatedItemType: text('related_item_type'), // Type of the related item
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(() => new Date()),
-  read: integer('read', { mode: 'boolean' }).default(0),
-  readAt: integer('read_at', { mode: 'timestamp' }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  read: boolean('read').default(false),
+  readAt: timestamp('read_at'),
 });
 
 // Alert relations
@@ -185,15 +185,15 @@ export const alertsRelations = relations(alerts, ({ one }) => ({
 }));
 
 // Data fetch logs - Track API calls to external services
-export const dataFetchLogs = sqliteTable('data_fetch_logs', {
+export const dataFetchLogs = pgTable('data_fetch_logs', {
   id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
   source: text('source').notNull(), // API source name
   endpoint: text('endpoint').notNull(), // Specific endpoint called
   requestParams: text('request_params'), // JSON string of request parameters
   responseStatus: integer('response_status'), // HTTP status code
   itemsRetrieved: integer('items_retrieved'), // Number of items retrieved
-  startTime: integer('start_time', { mode: 'timestamp' }).notNull(),
-  endTime: integer('end_time', { mode: 'timestamp' }).notNull(),
-  success: integer('success', { mode: 'boolean' }).notNull(),
+  startTime: timestamp('start_time').notNull(),
+  endTime: timestamp('end_time').notNull(),
+  success: boolean('success').notNull(),
   errorMessage: text('error_message'),
 });
