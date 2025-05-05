@@ -1,115 +1,45 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import bcrypt from 'bcryptjs';
-import { z } from 'zod';
-import { createId } from '@paralleldrive/cuid2';
+import bcrypt from 'bcrypt';
+import { prisma } from '@/lib/db'; // Make sure this path matches your actual Prisma client
+import { v4 as uuidv4 } from 'uuid';
 
-// Validation schema for registration data
-const registerSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-});
-
-/**
- * POST /api/auth/register
- * 
- * Register a new user
- */
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    // Parse request body
-    const body = await request.json();
-    
-    // Validate request data
-    const validation = registerSchema.safeParse(body);
-    
-    if (!validation.success) {
-      // Return validation errors
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            message: 'Invalid input data',
-            fields: Object.fromEntries(
-              validation.error.issues.map(issue => [
-                issue.path[0],
-                issue.message,
-              ])
-            ),
-          },
-        },
-        { status: 400 }
-      );
+    const body = await req.json();
+    const { email, name, password } = body;
+
+    if (!email || !name || !password) {
+      return new NextResponse('Missing required fields', { status: 400 });
     }
-    
-    const { name, email, password } = validation.data;
-    
+
     // Check if user already exists
-    const existingUser = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()))
-      .limit(1);
-    
-    if (existingUser.length > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            message: 'User already exists',
-            fields: {
-              email: 'An account with this email already exists',
-            },
-          },
-        },
-        { status: 409 }
-      );
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return new NextResponse('Email already in use', { status: 409 });
     }
-    
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    
-    // Create user
-    const userId = createId();
-    const now = new Date();
-    
-    await db.insert(users).values({
-      id: userId,
-      name,
-      email: email.toLowerCase(),
-      passwordHash: hashedPassword,
-      role: 'user', // Default role
-      createdAt: now,
-      updatedAt: now,
-    });
-    
-    // Return success response
-    return NextResponse.json({
-      success: true,
-      message: 'User registered successfully',
-      user: {
-        id: userId,
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    await prisma.user.create({
+      data: {
+        id: uuidv4(), // If you use cuid(), replace this with cuid()
         name,
-        email: email.toLowerCase(),
+        email,
+        password_hash: hashedPassword,
         role: 'user',
+        created_at: new Date(),
+        updated_at: new Date(),
       },
     });
-    
+
+    return new NextResponse('User registered successfully', { status: 201 });
   } catch (error) {
-    console.error('[API] Registration error:', error);
-    
-    return NextResponse.json(
-      {
-        success: false,
-        error: {
-          message: 'An unexpected error occurred during registration',
-        },
-      },
-      { status: 500 }
-    );
+    console.error('[REGISTRATION_ERROR]', error);
+    return new NextResponse('Internal server error', { status: 500 });
   }
 }
