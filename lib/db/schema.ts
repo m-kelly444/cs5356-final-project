@@ -1,3 +1,4 @@
+// schema.ts
 // Database schema using Drizzle ORM (Lecture 11-12)
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
