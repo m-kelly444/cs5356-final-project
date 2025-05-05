@@ -34,7 +34,7 @@ export async function POST(request: Request) {
           {
             success: false,
             error: 'Invalid webhook signature',
-            timestamp: Date.now(),
+            timestamp: new Date(),
           },
           { status: 401 }
         );
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
           {
             success: false,
             error: 'Unknown webhook type',
-            timestamp: Date.now(),
+            timestamp: new Date(),
           },
           { status: 400 }
         );
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
         received: true,
         processed,
       },
-      timestamp: Date.now(),
+      timestamp: new Date(),
     };
     
     return NextResponse.json(response);
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
       {
         success: false,
         error: 'Failed to process webhook',
-        timestamp: Date.now(),
+        timestamp: new Date(),
       },
       { status: 500 }
     );

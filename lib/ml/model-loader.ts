@@ -40,7 +40,7 @@ export async function loadModelById(modelId: string): Promise<tf.LayersModel> {
   
   // Update last used timestamp
   await db.update(predictionModels)
-    .set({ lastUsed: Date.now() })
+    .set({ lastUsed: new Date() })
     .where(eq(predictionModels.id, modelId));
   
   // Determine path to model files
@@ -128,7 +128,7 @@ export async function saveModel(
   metadata: Omit<PredictionModel, 'id' | 'filePath' | 'trainingDate' | 'lastUsed'>
 ): Promise<string> {
   // Generate a model ID and file path
-  const modelId = `model_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const modelId = `model_${new Date()}_${Math.random().toString(36).substring(2, 9)}`;
   const filePath = `/models/${metadata.type}/${modelId}`;
   const fullPath = join(process.cwd(), 'public', filePath);
   
@@ -136,7 +136,7 @@ export async function saveModel(
   await model.save(`file://${fullPath}`);
   
   // Save model metadata to database
-  const now = Date.now();
+  const now = new Date();
   
   await db.insert(predictionModels).values({
     id: modelId,

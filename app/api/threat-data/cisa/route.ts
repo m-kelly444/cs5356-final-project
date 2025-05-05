@@ -40,7 +40,7 @@ export async function GET(request: Request) {
       return NextResponse.json({
         success: true,
         data: stats,
-        timestamp: Date.now(),
+        timestamp: new Date(),
       });
     }
     
@@ -87,7 +87,7 @@ export async function GET(request: Request) {
         ...catalog,
         vulnerabilities: filteredVulns,
       },
-      timestamp: Date.now(),
+      timestamp: new Date(),
     };
     
     return NextResponse.json(response);
@@ -99,7 +99,7 @@ export async function GET(request: Request) {
       {
         success: false,
         error: 'Failed to fetch CISA KEV data',
-        timestamp: Date.now(),
+        timestamp: new Date(),
       },
       { status: 500 }
     );

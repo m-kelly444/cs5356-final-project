@@ -60,7 +60,7 @@ export default async function PredictionsPage() {
   
   const model = modelStats[0] || {
     accuracy: 0.85,
-    trainingDate: Date.now(),
+    trainingDate: new Date(),
   };
   
   // Count predictions by severity

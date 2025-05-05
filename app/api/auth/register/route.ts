@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     
     // Create user
     const userId = createId();
-    const now = Date.now();
+    const now = new Date();
     
     await db.insert(users).values({
       id: userId,

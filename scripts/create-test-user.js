@@ -12,8 +12,8 @@ async function createTestUser() {
     email: 'test@example.com',
     passwordHash: hashedPassword,
     role: 'admin',
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
   });
   
   console.log('Test user created successfully');

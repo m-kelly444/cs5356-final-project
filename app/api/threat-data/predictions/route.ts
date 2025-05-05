@@ -157,7 +157,7 @@ export async function POST(request: Request) {
       {
         success: false,
         error: 'Failed to create prediction',
-        timestamp: Date.now(),
+        timestamp: new Date(),
       },
       { status: 500 }
     );

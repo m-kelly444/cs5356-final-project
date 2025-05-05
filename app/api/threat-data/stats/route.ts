@@ -44,7 +44,7 @@ export async function GET(request: Request) {
         vulnerabilityCount: vulnerabilityStats,
         attackStats,
       },
-      timestamp: Date.now(),
+      timestamp: new Date(),
     };
     
     return NextResponse.json(response);
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
       {
         success: false,
         error: 'Failed to fetch statistics',
-        timestamp: Date.now(),
+        timestamp: new Date(),
       },
       { status: 500 }
     );

@@ -119,7 +119,7 @@ export async function batchCheckUrls(urls: string[]): Promise<Map<string, PhishT
  */
 async function storePhishingIndicator(url: string, data: PhishTankCheckResponse): Promise<void> {
   try {
-    const now = Date.now();
+    const now = new Date();
     const verifiedDate = data.results.verifiedAt ? new Date(data.results.verifiedAt).getTime() : now;
     
     // Create indicator data

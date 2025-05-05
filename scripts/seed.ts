@@ -17,8 +17,8 @@ async function seed() {
       email: 'admin@example.com',
       passwordHash: hashedPassword,
       role: 'admin',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
     
     console.log('✅ Created admin user: admin@example.com / password123');
@@ -30,8 +30,8 @@ async function seed() {
       email: 'analyst@example.com',
       passwordHash: hashedPassword,
       role: 'analyst',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
     
     console.log('✅ Created analyst user: analyst@example.com / password123');
@@ -43,8 +43,8 @@ async function seed() {
       email: 'user@example.com',
       passwordHash: hashedPassword,
       role: 'user',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
     
     console.log('✅ Created regular user: user@example.com / password123');
