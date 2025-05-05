@@ -63,7 +63,7 @@ export default async function ThreatsPage() {
   const attackThreats = recentAttacks.map(attack => ({
     id: attack.id,
     title: attack.title,
-    type: 'attack' as const,
+    type: 'attack',
     severity: attack.impactLevel,
     description: attack.description,
     date: attack.attackDate,
