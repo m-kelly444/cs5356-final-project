@@ -5,7 +5,7 @@
  * using TensorFlow.js.
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { fetchAndNormalizeVulnerabilities, extractFeatures, prepareTrainingData } from './data-processing';
 import { db } from '../db';
 import { predictionModels, predictions } from '../db/schema';

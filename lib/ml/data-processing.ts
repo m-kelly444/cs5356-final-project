@@ -5,7 +5,7 @@
  * from various cybersecurity data sources.
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { fetchCisaKevCatalog, CisaKevVulnerability } from '../api/cisa';
 import { fetchVulnerabilities, NvdVulnerability } from '../api/nvd';
 import { db } from '../db';

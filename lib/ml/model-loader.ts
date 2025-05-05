@@ -5,7 +5,7 @@
  * It supports both client-side (TensorFlow.js) and server-side models.
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { join } from 'path';
 import { db } from '@/lib/db';
 import { predictionModels } from '@/lib/db/schema';
