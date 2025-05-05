@@ -1,0 +1,359 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { signOut } from 'next-auth/react';
+import { Bell, Menu, X, User, LogOut, Settings, ChevronDown } from 'lucide-react';
+import { Button } from '../ui/button';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface HeaderProps {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    image?: string;
+    role?: string;
+  };
+}
+
+export default function Header({ user }: HeaderProps) {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  
+  // Handle scroll event to change header appearance
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+  
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('#profile-menu') && !target.closest('#profile-button')) {
+        setIsProfileMenuOpen(false);
+      }
+      if (!target.closest('#notifications-menu') && !target.closest('#notifications-button')) {
+        setIsNotificationsOpen(false);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+  
+  // Fetch notifications
+  useEffect(() => {
+    // Mock notifications for now
+    setNotifications([
+      {
+        id: '1',
+        title: 'Critical Vulnerability',
+        message: 'New critical vulnerability detected: CVE-2025-1234',
+        time: '10m ago',
+        read: false,
+        type: 'vulnerability'
+      },
+      {
+        id: '2',
+        title: 'Attack Prediction',
+        message: 'High probability of ransomware attacks in finance sector',
+        time: '1h ago',
+        read: false,
+        type: 'prediction'
+      },
+      {
+        id: '3',
+        title: 'System Update',
+        message: 'Platform updated to version 2.3.0',
+        time: '3h ago',
+        read: true,
+        type: 'system'
+      }
+    ]);
+  }, []);
+  
+  // Handle sign out
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: '/' });
+  };
+  
+  return (
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
+      isScrolled ? 'bg-gray-900/80 backdrop-blur-md shadow-md' : 'bg-transparent'
+    }`}>
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo and brand */}
+          <div className="flex items-center">
+            <Link href="/dashboard" className="flex items-center">
+              <span className="text-xl font-bold neon-text">CyberPulse</span>
+            </Link>
+          </div>
+          
+          {/* Desktop navigation */}
+          <nav className="hidden md:flex items-center space-x-6">
+            <Link href="/dashboard" className="text-gray-300 hover:text-cyan-400 transition-colors">
+              Dashboard
+            </Link>
+            <Link href="/dashboard/threats" className="text-gray-300 hover:text-cyan-400 transition-colors">
+              Threats
+            </Link>
+            <Link href="/dashboard/vulnerabilities" className="text-gray-300 hover:text-cyan-400 transition-colors">
+              Vulnerabilities
+            </Link>
+            <Link href="/dashboard/attack-map" className="text-gray-300 hover:text-cyan-400 transition-colors">
+              Attack Map
+            </Link>
+            <Link href="/dashboard/predictions" className="text-gray-300 hover:text-cyan-400 transition-colors">
+              Predictions
+            </Link>
+          </nav>
+          
+          {/* User profile and notifications */}
+          <div className="flex items-center space-x-3">
+            {/* Notifications */}
+            <div className="relative">
+              <Button
+                id="notifications-button"
+                variant="cyberGhost"
+                size="icon"
+                className="relative"
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              >
+                <Bell size={18} />
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {notifications.filter(n => !n.read).length}
+                  </span>
+                )}
+              </Button>
+              
+              {/* Notifications dropdown */}
+              <AnimatePresence>
+                {isNotificationsOpen && (
+                  <motion.div
+                    id="notifications-menu"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-2 w-80 cyber-card border border-gray-700 shadow-lg z-10"
+                  >
+                    <div className="p-3 border-b border-gray-700">
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-bold text-white">Notifications</h3>
+                        <button className="text-xs text-cyan-400 hover:text-cyan-300">
+                          Mark all as read
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="max-h-96 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="p-4 text-center text-gray-400">
+                          No notifications
+                        </div>
+                      ) : (
+                        <div>
+                          {notifications.map((notification) => (
+                            <div
+                              key={notification.id}
+                              className={`p-3 border-b border-gray-700 hover:bg-gray-800/50 ${
+                                !notification.read ? 'bg-gray-800/30' : ''
+                              }`}
+                            >
+                              <div className="flex items-start">
+                                <div className={`h-2 w-2 mt-1.5 rounded-full mr-2 ${
+                                  notification.type === 'vulnerability' ? 'bg-red-500' :
+                                  notification.type === 'prediction' ? 'bg-yellow-500' :
+                                  'bg-blue-500'
+                                }`} />
+                                <div className="flex-1">
+                                  <div className="flex justify-between">
+                                    <h4 className="font-medium text-sm">
+                                      {notification.title}
+                                    </h4>
+                                    <span className="text-xs text-gray-400">
+                                      {notification.time}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-gray-300 mt-1">
+                                    {notification.message}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="p-2 border-t border-gray-700 text-center">
+                      <Link href="/dashboard/notifications" className="text-xs text-cyan-400 hover:text-cyan-300">
+                        View all notifications
+                      </Link>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            
+            {/* User profile */}
+            <div className="relative">
+              <Button
+                id="profile-button"
+                variant="cyberGhost"
+                className="flex items-center gap-2"
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+              >
+                {user.image ? (
+                  <img
+                    src={user.image}
+                    alt={user.name}
+                    className="h-8 w-8 rounded-full"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-gray-700 flex items-center justify-center text-white">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="hidden md:inline-block">{user.name}</span>
+                <ChevronDown size={16} />
+              </Button>
+              
+              {/* Profile dropdown */}
+              <AnimatePresence>
+                {isProfileMenuOpen && (
+                  <motion.div
+                    id="profile-menu"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-2 w-48 cyber-card border border-gray-700 shadow-lg z-10"
+                  >
+                    <div className="p-3 border-b border-gray-700">
+                      <p className="font-medium text-white">{user.name}</p>
+                      <p className="text-xs text-gray-400">{user.email}</p>
+                      {user.role && (
+                        <div className="mt-1 text-xs inline-block px-2 py-0.5 bg-gray-700 rounded text-cyan-400">
+                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="py-1">
+                      <button
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-cyan-400"
+                        onClick={() => {
+                          setIsProfileMenuOpen(false);
+                          // Navigate to profile
+                        }}
+                      >
+                        <User size={16} className="mr-2" />
+                        Profile
+                      </button>
+                      <button
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-cyan-400"
+                        onClick={() => {
+                          setIsProfileMenuOpen(false);
+                          // Navigate to settings
+                        }}
+                      >
+                        <Settings size={16} className="mr-2" />
+                        Settings
+                      </button>
+                      <button
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-red-400"
+                        onClick={handleSignOut}
+                      >
+                        <LogOut size={16} className="mr-2" />
+                        Sign out
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            
+            {/* Mobile menu button */}
+            <Button
+              variant="cyberGhost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            </Button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Mobile navigation */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden border-t border-gray-800 bg-gray-900/90 backdrop-blur-md"
+          >
+            <div className="px-4 py-3 space-y-1">
+              <Link 
+                href="/dashboard" 
+                className="block px-3 py-2 rounded-md text-base text-gray-300 hover:bg-gray-800 hover:text-cyan-400"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <Link 
+                href="/dashboard/threats" 
+                className="block px-3 py-2 rounded-md text-base text-gray-300 hover:bg-gray-800 hover:text-cyan-400"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Threats
+              </Link>
+              <Link 
+                href="/dashboard/vulnerabilities" 
+                className="block px-3 py-2 rounded-md text-base text-gray-300 hover:bg-gray-800 hover:text-cyan-400"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Vulnerabilities
+              </Link>
+              <Link 
+                href="/dashboard/attack-map" 
+                className="block px-3 py-2 rounded-md text-base text-gray-300 hover:bg-gray-800 hover:text-cyan-400"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Attack Map
+              </Link>
+              <Link 
+                href="/dashboard/predictions" 
+                className="block px-3 py-2 rounded-md text-base text-gray-300 hover:bg-gray-800 hover:text-cyan-400"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Predictions
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </header>
+  );
+}

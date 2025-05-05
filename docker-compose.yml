@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Web application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/cyberpulse.db
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NVD_API_KEY=${NVD_API_KEY}
+    volumes:
+      - app-data:/app/data
+    networks:
+      - cyberpulse-network
+
+  # Database (SQLite)
+  db:
+    image: keinos/sqlite3:latest
+    volumes:
+      - app-data:/data
+    command: ["sqlite3", "/data/cyberpulse.db", ".databases"]
+    networks:
+      - cyberpulse-network
+
+  # ML training service (optional)
+  ml-training:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["node", "scripts/train-models.js"]
+    depends_on:
+      - db
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/cyberpulse.db
+    volumes:
+      - app-data:/app/data
+    networks:
+      - cyberpulse-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+    profiles:
+      - training  # Only start this service when explicitly requested
+
+  # Data collection service
+  data-collector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["node", "scripts/data-collector.js"]
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/cyberpulse.db
+      - NVD_API_KEY=${NVD_API_KEY}
+      - COLLECTION_INTERVAL=3600  # Collect data every hour (in seconds)
+    volumes:
+      - app-data:/app/data
+    networks:
+      - cyberpulse-network
+
+volumes:
+  app-data:
+    # Persistent volume for database and model files
+
+networks:
+  cyberpulse-network:
+    driver: bridge

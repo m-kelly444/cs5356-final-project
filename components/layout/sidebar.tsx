@@ -1,0 +1,275 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { 
+  LayoutDashboard, Shield, Bug, Globe, Brain, 
+  Zap, Database, Layers, Settings, ChevronLeft, 
+  ChevronRight, ExternalLink
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+
+interface SidebarProps {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    image?: string;
+    role?: string;
+  };
+}
+
+export default function Sidebar({ user }: SidebarProps) {
+  const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  
+  // Check if mobile on mount and on resize
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+      if (window.innerWidth < 1024) {
+        setIsCollapsed(true);
+      }
+    };
+    
+    // Initial check
+    checkIsMobile();
+    
+    // Add event listener for window resize
+    window.addEventListener('resize', checkIsMobile);
+    
+    // Clean up event listener
+    return () => {
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
+  
+  // Navigation items with icons and paths
+  const navItems = [
+    {
+      name: 'Dashboard',
+      icon: <LayoutDashboard size={20} />,
+      path: '/dashboard',
+      exact: true,
+    },
+    {
+      name: 'Threats',
+      icon: <Shield size={20} />,
+      path: '/dashboard/threats',
+    },
+    {
+      name: 'Vulnerabilities',
+      icon: <Bug size={20} />,
+      path: '/dashboard/vulnerabilities',
+    },
+    {
+      name: 'Attack Map',
+      icon: <Globe size={20} />,
+      path: '/dashboard/attack-map',
+    },
+    {
+      name: 'Predictions',
+      icon: <Brain size={20} />,
+      path: '/dashboard/predictions',
+    },
+    {
+      section: 'Data',
+      items: [
+        {
+          name: 'CISA KEV',
+          icon: <Zap size={20} />,
+          path: '/dashboard/data/cisa',
+        },
+        {
+          name: 'NVD',
+          icon: <Database size={20} />,
+          path: '/dashboard/data/nvd',
+        },
+        {
+          name: 'Indicators',
+          icon: <Layers size={20} />,
+          path: '/dashboard/data/indicators',
+        },
+      ],
+    },
+    {
+      section: 'Settings',
+      items: [
+        {
+          name: 'Account',
+          icon: <Settings size={20} />,
+          path: '/dashboard/settings/account',
+        },
+        {
+          name: 'API',
+          icon: <ExternalLink size={20} />,
+          path: '/dashboard/settings/api',
+        },
+      ],
+    },
+  ];
+  
+  // Check if a nav item is active
+  const isActive = (path: string, exact = false) => {
+    if (exact) {
+      return pathname === path;
+    }
+    return pathname.startsWith(path);
+  };
+  
+  // Toggle sidebar collapse state
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+  
+  // Toggle mobile sidebar
+  const toggleMobileSidebar = () => {
+    setIsMobileOpen(!isMobileOpen);
+  };
+  
+  // Sidebar content component
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
+      {/* Sidebar header with toggle button */}
+      <div className="h-16 flex items-center px-4 justify-between border-b border-gray-800">
+        {!isCollapsed && (
+          <div className="text-lg font-bold text-cyan-400">Navigation</div>
+        )}
+        <button
+          onClick={toggleCollapse}
+          className="p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800"
+        >
+          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+        </button>
+      </div>
+      
+      {/* Navigation items */}
+      <nav className="flex-1 overflow-y-auto py-4 px-2">
+        <ul className="space-y-1">
+          {navItems.map((item, index) => {
+            // If it's a section with sub-items
+            if ('section' in item) {
+              return (
+                <li key={index} className="mt-6 first:mt-0">
+                  {!isCollapsed && (
+                    <div className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      {item.section}
+                    </div>
+                  )}
+                  <ul className="space-y-1">
+                    {item.items.map((subItem, subIndex) => (
+                      <li key={`${index}-${subIndex}`}>
+                        <Link
+                          href={subItem.path}
+                          className={`flex items-center ${
+                            isCollapsed ? 'justify-center' : ''
+                          } px-3 py-2 rounded-md text-sm ${
+                            isActive(subItem.path)
+                              ? 'bg-cyan-900/30 text-cyan-400'
+                              : 'text-gray-300 hover:bg-gray-800 hover:text-cyan-400'
+                          } transition-colors`}
+                        >
+                          <span className="flex-shrink-0">{subItem.icon}</span>
+                          {!isCollapsed && <span className="ml-3">{subItem.name}</span>}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              );
+            }
+            
+            // Regular nav item
+            return (
+              <li key={index}>
+                <Link
+                  href={item.path}
+                  className={`flex items-center ${
+                    isCollapsed ? 'justify-center' : ''
+                  } px-3 py-2 rounded-md text-sm ${
+                    isActive(item.path, item.exact)
+                      ? 'bg-cyan-900/30 text-cyan-400'
+                      : 'text-gray-300 hover:bg-gray-800 hover:text-cyan-400'
+                  } transition-colors`}
+                >
+                  <span className="flex-shrink-0">{item.icon}</span>
+                  {!isCollapsed && <span className="ml-3">{item.name}</span>}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+      
+      {/* Sidebar footer with threat level indicator */}
+      <div className="border-t border-gray-800 p-4">
+        <div className={`flex ${isCollapsed ? 'justify-center' : 'items-center'}`}>
+          {!isCollapsed && (
+            <div className="mr-2">
+              <div className="text-xs text-gray-400">Threat Level</div>
+              <div className="text-sm font-medium text-white">High</div>
+            </div>
+          )}
+          <div className="flex-shrink-0 h-2 bg-gray-700 rounded-full overflow-hidden w-full">
+            <div
+              className="h-full bg-gradient-to-r from-yellow-500 to-red-500"
+              style={{ width: '75%' }}
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+  
+  // Mobile sidebar trigger
+  const MobileTrigger = () => (
+    <button
+      onClick={toggleMobileSidebar}
+      className="lg:hidden fixed bottom-4 left-4 z-40 p-3 rounded-full bg-cyan-600 text-white shadow-lg shadow-cyan-500/20"
+    >
+      {isMobileOpen ? <ChevronLeft size={24} /> : <ChevronRight size={24} />}
+    </button>
+  );
+  
+  // Mobile sidebar overlay
+  const MobileOverlay = () => (
+    <div
+      className={`fixed inset-0 bg-black/50 z-30 lg:hidden ${
+        isMobileOpen ? 'block' : 'hidden'
+      }`}
+      onClick={toggleMobileSidebar}
+    ></div>
+  );
+  
+  // Mobile sidebar
+  if (isMobile) {
+    return (
+      <>
+        <MobileTrigger />
+        <MobileOverlay />
+        <motion.div
+          className="fixed inset-y-0 left-0 z-40 w-64 bg-gray-900 border-r border-gray-800 shadow-xl lg:hidden"
+          initial={{ x: '-100%' }}
+          animate={{ x: isMobileOpen ? 0 : '-100%' }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+        >
+          <SidebarContent />
+        </motion.div>
+      </>
+    );
+  }
+  
+  // Desktop sidebar
+  return (
+    <div
+      className={`h-screen sticky top-0 pt-16 bg-gray-900 border-r border-gray-800 transition-all duration-300 ${
+        isCollapsed ? 'w-16' : 'w-64'
+      }`}
+    >
+      <SidebarContent />
+    </div>
+  );
+}

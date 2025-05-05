@@ -1,0 +1,140 @@
+'use client';
+
+import Link from 'next/link';
+import { Github, Twitter, Linkedin } from 'lucide-react';
+
+export default function Footer() {
+  return (
+    <footer className="bg-gray-900/30 backdrop-blur-sm border-t border-gray-800 py-6">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* About section */}
+          <div>
+            <h3 className="font-bold text-white mb-3">CyberPulse</h3>
+            <p className="text-sm text-gray-400 mb-4"></p>
+              Real-time cyber threat intelligence platform powered by machine learning.
+              Predicting attacks before they happen.
+            </p>
+            <div className="flex space-x-4">
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                <Github size={20} />
+                <span className="sr-only">GitHub</span>
+              </a>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                <Twitter size={20} />
+                <span className="sr-only">Twitter</span>
+              </a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                <Linkedin size={20} />
+                <span className="sr-only">LinkedIn</span>
+              </a>
+            </div>
+          </div>
+          
+          {/* Quick links */}
+          <div>
+            <h3 className="font-bold text-white mb-3">Quick Links</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/dashboard" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard/threats" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  Threats
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard/vulnerabilities" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  Vulnerabilities
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard/attack-map" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  Attack Map
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard/predictions" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  Predictions
+                </Link>
+              </li>
+            </ul>
+          </div>
+          
+          {/* Resources */}
+          <div>
+            <h3 className="font-bold text-white mb-3">Resources</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  CISA KEV Catalog
+                </a>
+              </li>
+              <li>
+                <a href="https://nvd.nist.gov/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  National Vulnerability Database
+                </a>
+              </li>
+              <li>
+                <a href="https://www.mitre.org/attack" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  MITRE ATT&CK
+                </a>
+              </li>
+              <li>
+                <a href="https://www.virustotal.com/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  VirusTotal
+                </a>
+              </li>
+              <li>
+                <a href="https://urlhaus.abuse.ch/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  URLhaus
+                </a>
+              </li>
+            </ul>
+          </div>
+          
+          {/* Legal */}
+          <div>
+            <h3 className="font-bold text-white mb-3">Legal</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <a href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  Terms of Service
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  Cookie Policy
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  Licenses
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        {/* Copyright and additional info */}
+        <div className="mt-8 pt-6 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
+          <p className="text-sm text-gray-500 mb-4 md:mb-0">
+            &copy; {new Date().getFullYear()} CyberPulse. All rights reserved.
+          </p>
+          <div className="text-xs text-gray-500">
+            <span>Built with Next.js, React, and TensorFlow.js</span>
+            <span className="mx-2">•</span>
+            <span>Using real-time data from CISA, NVD, and other authoritative sources</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}

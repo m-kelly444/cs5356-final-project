@@ -1,0 +1,159 @@
+import {
+    format,
+    formatDistance,
+    formatRelative,
+    formatDistanceToNow,
+    isValid,
+    parseISO,
+  } from 'date-fns';
+  
+  /**
+   * Formats a date using date-fns
+   * 
+   * @param date - Date to format (Date object, ISO string, or timestamp)
+   * @param formatStr - Format string (default: 'MMM d, yyyy')
+   * @returns Formatted date string
+   */
+  export function formatDate(
+    date: Date | string | number,
+    formatStr = 'MMM d, yyyy'
+  ): string {
+    if (!date) return 'Invalid date';
+    
+    // Convert to Date object if not already
+    const dateObj = 
+      typeof date === 'string'
+        ? isValid(new Date(date))
+          ? new Date(date)
+          : parseISO(date)
+        : typeof date === 'number'
+        ? new Date(date)
+        : date;
+    
+    // Check if valid date
+    if (!isValid(dateObj)) return 'Invalid date';
+    
+    // Format date
+    return format(dateObj, formatStr);
+  }
+  
+  /**
+   * Formats a date relative to the current date
+   * 
+   * @param date - Date to format (Date object, ISO string, or timestamp)
+   * @param baseDate - Base date to compare to (default: now)
+   * @returns Formatted relative date string
+   */
+  export function formatRelativeDate(
+    date: Date | string | number,
+    baseDate?: Date
+  ): string {
+    if (!date) return 'Invalid date';
+    
+    // Convert to Date object if not already
+    const dateObj = 
+      typeof date === 'string'
+        ? isValid(new Date(date))
+          ? new Date(date)
+          : parseISO(date)
+        : typeof date === 'number'
+        ? new Date(date)
+        : date;
+    
+    // Check if valid date
+    if (!isValid(dateObj)) return 'Invalid date';
+    
+    // Format relative date
+    return formatRelative(dateObj, baseDate || new Date());
+  }
+  
+  /**
+   * Formats a date as a time ago string (e.g., "2 hours ago")
+   * 
+   * @param date - Date to format (Date object, ISO string, or timestamp)
+   * @param addSuffix - Whether to add a suffix (default: true)
+   * @returns Formatted time ago string
+   */
+  export function formatTimeAgo(
+    date: Date | string | number,
+    addSuffix = true
+  ): string {
+    if (!date) return 'Invalid date';
+    
+    // Convert to Date object if not already
+    const dateObj = 
+      typeof date === 'string'
+        ? isValid(new Date(date))
+          ? new Date(date)
+          : parseISO(date)
+        : typeof date === 'number'
+        ? new Date(date)
+        : date;
+    
+    // Check if valid date
+    if (!isValid(dateObj)) return 'Invalid date';
+    
+    // Format time ago
+    return formatDistanceToNow(dateObj, { addSuffix });
+  }
+  
+  /**
+   * Formats a date range
+   * 
+   * @param startDate - Start date
+   * @param endDate - End date
+   * @param formatStr - Format string (default: 'MMM d')
+   * @returns Formatted date range string
+   */
+  export function formatDateRange(
+    startDate: Date | string | number,
+    endDate: Date | string | number,
+    formatStr = 'MMM d'
+  ): string {
+    // Format both dates
+    const formattedStart = formatDate(startDate, formatStr);
+    const formattedEnd = formatDate(endDate, formatStr);
+    
+    // Different years
+    const startYear = new Date(startDate).getFullYear();
+    const endYear = new Date(endDate).getFullYear();
+    
+    if (startYear !== endYear) {
+      return `${formatDate(startDate, `${formatStr}, yyyy`)} - ${formatDate(
+        endDate,
+        `${formatStr}, yyyy`
+      )}`;
+    }
+    
+    // Same date
+    if (formattedStart === formattedEnd) {
+      return formatDate(startDate, `${formatStr}, yyyy`);
+    }
+    
+    // Different dates, same year
+    return `${formattedStart} - ${formattedEnd}, ${startYear}`;
+  }
+  
+  /**
+   * Formats a timestamp as an ISO string
+   * 
+   * @param date - Date to format
+   * @returns ISO string
+   */
+  export function toISOString(date: Date | string | number): string {
+    // Convert to Date object if not already
+    const dateObj = 
+      typeof date === 'string'
+        ? isValid(new Date(date))
+          ? new Date(date)
+          : parseISO(date)
+        : typeof date === 'number'
+        ? new Date(date)
+        : date;
+    
+    // Check if valid date
+    if (!isValid(dateObj)) return '';
+    
+    // Format as ISO string
+    return dateObj.toISOString();
+  }

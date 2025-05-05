@@ -1,0 +1,82 @@
+# CyberPulse Development Notes
+
+## Data Sources
+- CISA KEV Catalog: https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+- NVD API: https://nvd.nist.gov/developers/vulnerabilities
+- PhishTank API: https://phishtank.org/api_info.php
+- URLhaus API: https://urlhaus-api.abuse.ch/
+- VirusTotal API: https://developers.virustotal.com/reference/overview
+
+## Machine Learning Model Architecture
+1. **Vulnerability Risk Assessment Model**
+   - Input: Vulnerability metadata (CVSS scores, attack vectors, etc.)
+   - Output: Probability of exploitation in the wild
+   - Architecture: Dense neural network with 3 layers
+
+2. **Attack Prediction Model**
+   - Input: Target metadata (sector, region) + recent vulnerabilities
+   - Output: Probability of different attack types
+   - Architecture: Dense neural network with time-series features
+
+3. **Feature Engineering Notes**
+   - One-hot encode categorical features (sectors, regions)
+   - Normalize numerical features
+   - Handle missing values with reasonable defaults
+   - Consider feature importance analysis to improve models
+
+## UI Design Inspiration
+- Cyberpunk 2077 interface: https://cyberpunk.fandom.com/wiki/Cyberpunk_2077
+- Holographic interfaces from sci-fi films
+- Use gradients of cyan, magenta, and yellow for cyberpunk feel
+- Animated grid backgrounds and scanlines for retro-futuristic look
+
+## Development Roadmap
+1. **Phase 1: Core Infrastructure**
+   - Set up Next.js project with TypeScript
+   - Implement database schema and migrations
+   - Create API routes for data sources
+   - Implement authentication
+
+2. **Phase 2: Data Processing**
+   - Build data fetchers for external APIs
+   - Implement data normalization
+   - Create ML model architecture
+   - Train initial models with sample data
+
+3. **Phase 3: UI Components**
+   - Design and implement dashboard layouts
+   - Create visualization components
+   - Build prediction cards and threat displays
+   - Implement interactive attack map
+
+4. **Phase 4: Integration**
+   - Connect ML predictions to UI
+   - Set up real-time updates
+   - Implement user alerts
+   - Add customization options
+
+5. **Phase 5: Deployment**
+   - Set up Docker containers
+   - Configure CI/CD pipeline
+   - Implement monitoring
+   - Optimize performance
+
+## Technical Considerations
+- Use SQLite for development, consider PostgreSQL for production
+- TensorFlow.js for ML model serving
+- Use Server Components where possible for better performance
+- Implement appropriate caching for external API calls
+- Set up regular data collection jobs
+
+## Known Issues & Limitations
+- NVD API has rate limits (5 requests per 30 seconds without API key)
+- Some data sources require paid API keys for production use
+- ML models need substantial training data for accuracy
+- Performance considerations for real-time visualization
+
+## Ideas for Future Enhancements
+- Add user-specific dashboards and alerts
+- Implement natural language explanations for predictions
+- Add more data sources for improved accuracy
+- Create an API for external integrations
+- Add mobile app support
