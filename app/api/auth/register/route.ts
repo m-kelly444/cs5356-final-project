@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { db } from '@/lib/db';
+import { db, schema } from '@/lib/db'; // Import schema as well
 import { v4 as uuidv4 } from 'uuid';
+import { eq } from 'drizzle-orm';
 
 export async function POST(req: Request) {
   try {
@@ -12,10 +13,13 @@ export async function POST(req: Request) {
       return new NextResponse('Missing required fields', { status: 400 });
     }
 
-    // Check if user already exists
-    const existingUser = await db.user.findUnique({
-      where: { email },
-    });
+    // Check if user already exists using Drizzle syntax
+    const existingUsers = await db.select()
+      .from(schema.users)
+      .where(eq(schema.users.email, email))
+      .limit(1);
+    
+    const existingUser = existingUsers[0];
 
     if (existingUser) {
       return new NextResponse('Email already in use', { status: 409 });
@@ -24,18 +28,17 @@ export async function POST(req: Request) {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
-    await db.user.create({
-      data: {
-        id: uuidv4(), // If you use cuid(), replace this with cuid()
+    // Create new user using Drizzle syntax
+    await db.insert(schema.users)
+      .values({
+        id: uuidv4(),
         name,
         email,
         password_hash: hashedPassword,
         role: 'user',
         created_at: new Date(),
         updated_at: new Date(),
-      },
-    });
+      });
 
     return new NextResponse('User registered successfully', { status: 201 });
   } catch (error) {
