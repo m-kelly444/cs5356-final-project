@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { db, schema } from '@/lib/db';
-import { v4 as uuidv4 } from 'uuid';
+import { createId } from '@paralleldrive/cuid2'; // Changed from uuid import
 import { eq } from 'drizzle-orm';
 
 export async function POST(req: Request) {
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     const existingUsers = await db
       .select()
       .from(schema.users)
-      .where(eq(schema.users.email, email))
+      .where(eq(schema.users.email, email.toLowerCase())) // Added toLowerCase for case-insensitive check
       .limit(1);
     
     const existingUser = existingUsers.length > 0 ? existingUsers[0] : null;
@@ -33,9 +33,9 @@ export async function POST(req: Request) {
     await db
       .insert(schema.users)
       .values({
-        id: uuidv4(),
+        id: createId(), // Using createId() instead of uuidv4()
         name,
-        email,
+        email: email.toLowerCase(), // Store email in lowercase
         passwordHash: hashedPassword, // Change to passwordHash to match schema
         role: 'user',
         createdAt: new Date(),
@@ -45,6 +45,8 @@ export async function POST(req: Request) {
     return new NextResponse('User registered successfully', { status: 201 });
   } catch (error) {
     console.error('[REGISTRATION_ERROR]', error);
+    // Add more detailed error logging
+    console.error('[REGISTRATION_ERROR_DETAILS]', JSON.stringify(error, null, 2));
     return new NextResponse('Internal server error', { status: 500 });
   }
 }
