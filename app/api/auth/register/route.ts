@@ -36,10 +36,10 @@ export async function POST(req: Request) {
         id: uuidv4(),
         name,
         email,
-        password_hash: hashedPassword, // Adjust if your column name is different
+        passwordHash: hashedPassword, // Changed from password_hash to match schema property name
         role: 'user',
-        created_at: new Date(),
-        updated_at: new Date(),
+        createdAt: new Date(), // Changed from created_at to match schema property name
+        updatedAt: new Date(), // Changed from updated_at to match schema property name
       });
 
     return new NextResponse('User registered successfully', { status: 201 });
