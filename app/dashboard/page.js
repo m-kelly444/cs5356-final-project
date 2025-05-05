@@ -83,7 +83,7 @@ export default async function ThreatsPage() {
   const predictionThreats = activePredictions.map(prediction => ({
     id: prediction.id,
     title: `Predicted ${prediction.attackType} targeting ${prediction.targetValue}`,
-    type: 'prediction' as const,
+    type: 'prediction',
     severity: prediction.severity || (prediction.probability * 10),
     description: prediction.explanation || `High probability of ${prediction.attackType} attack on ${prediction.targetValue} in the near future.`,
     date: prediction.generatedDate,
