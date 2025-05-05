@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { prisma } from '@/lib/db'; // Make sure this path matches your actual Prisma client
 import { v4 as uuidv4 } from 'uuid';
 
