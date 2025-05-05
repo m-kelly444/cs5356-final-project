@@ -11,7 +11,7 @@ export default function Footer() {
           {/* About section */}
           <div>
             <h3 className="font-bold text-white mb-3">CyberPulse</h3>
-            <p className="text-sm text-gray-400 mb-4"></p>
+            <p className="text-sm text-gray-400 mb-4">
               Real-time cyber threat intelligence platform powered by machine learning.
               Predicting attacks before they happen.
             </p>
