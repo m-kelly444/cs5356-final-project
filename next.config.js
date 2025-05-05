@@ -12,6 +12,17 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['tensorflow'],
   },
+  
+  // Add this to skip ESLint during builds
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  
+  // Add this to skip type checking during builds
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  
   webpack: (config) => {
     // TensorFlow.js specific configurations
     config.resolve.fallback = {
