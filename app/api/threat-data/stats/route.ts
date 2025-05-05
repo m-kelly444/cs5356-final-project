@@ -7,6 +7,9 @@ import { vulnerabilities, cyberAttacks, predictions } from '@/lib/db/schema';
 import { count, gt, gte, eq, and, desc } from 'drizzle-orm';
 import { StatsResponse } from '@/types/api';
 
+// Add this line to tell Next.js this is a dynamic route
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/threat-data/stats
  * 

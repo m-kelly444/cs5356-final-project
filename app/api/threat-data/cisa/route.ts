@@ -6,6 +6,9 @@ import { db } from '@/lib/db';
 import { vulnerabilities } from '@/lib/db/schema';
 import { CisaKevCatalogResponse } from '@/types/api';
 
+// Add this line to tell Next.js this is a dynamic route
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/threat-data/cisa
  * 

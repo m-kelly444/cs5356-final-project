@@ -7,6 +7,9 @@ import { predictions } from '@/lib/db/schema';
 import { desc, gte, lte } from 'drizzle-orm';
 import { PredictionRequestBody, PredictionResponse } from '@/types/api';
 
+// Add this line to tell Next.js this is a dynamic route
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/threat-data/predictions
  * 
