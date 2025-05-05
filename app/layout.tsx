@@ -30,8 +30,6 @@ export const metadata = {
   description: 'Real-time cyber threat prediction using machine learning with data from CISA, NVD, and other authoritative sources.',
   keywords: ['cybersecurity', 'threat intelligence', 'machine learning', 'predictive analytics', 'CISA', 'NVD', 'vulnerability'],
   authors: [{ name: 'CyberPulse Team' }],
-  viewport: 'width=device-width, initial-scale=1',
-  themeColor: '#000000',
   icons: {
     icon: '/favicon.ico',
     apple: '/apple-icon.png',
