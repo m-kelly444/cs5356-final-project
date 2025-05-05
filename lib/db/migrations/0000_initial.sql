@@ -1,44 +1,42 @@
--- Initial database schema
-
--- Create users table
+-- USERS
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'analyst', 'admin')),
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create dashboards table
+-- DASHBOARDS
 CREATE TABLE IF NOT EXISTS dashboards (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   layout TEXT NOT NULL,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create vulnerabilities table
+-- VULNERABILITIES
 CREATE TABLE IF NOT EXISTS vulnerabilities (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
   severity REAL NOT NULL,
   exploited_in_wild INTEGER NOT NULL DEFAULT 0,
-  published_date INTEGER NOT NULL,
-  last_modified INTEGER NOT NULL,
-  cisa_kev_date INTEGER,
-  remediation_date INTEGER,
+  published_date TIMESTAMP NOT NULL,
+  last_modified TIMESTAMP NOT NULL,
+  cisa_kev_date TIMESTAMP,
+  remediation_date TIMESTAMP,
   affected_systems TEXT NOT NULL,
   attack_vector TEXT,
   references TEXT NOT NULL,
   source_data TEXT NOT NULL
 );
 
--- Create threat_actors table
+-- THREAT ACTORS
 CREATE TABLE IF NOT EXISTS threat_actors (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -47,8 +45,8 @@ CREATE TABLE IF NOT EXISTS threat_actors (
   nation_state TEXT,
   motivations TEXT,
   sophistication_level TEXT,
-  first_seen INTEGER,
-  last_seen INTEGER,
+  first_seen TIMESTAMP,
+  last_seen TIMESTAMP,
   associated_groups TEXT,
   targeted_sectors TEXT,
   targeted_regions TEXT,
@@ -56,13 +54,13 @@ CREATE TABLE IF NOT EXISTS threat_actors (
   source_data TEXT
 );
 
--- Create cyber_attacks table
+-- CYBER ATTACKS
 CREATE TABLE IF NOT EXISTS cyber_attacks (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
-  attack_date INTEGER NOT NULL,
-  discovered_date INTEGER NOT NULL,
+  attack_date TIMESTAMP NOT NULL,
+  discovered_date TIMESTAMP NOT NULL,
   attack_type TEXT NOT NULL,
   threat_actor_id TEXT REFERENCES threat_actors(id),
   vulnerabilities_exploited TEXT,
@@ -76,7 +74,7 @@ CREATE TABLE IF NOT EXISTS cyber_attacks (
   source_data TEXT
 );
 
--- Create prediction_models table
+-- PREDICTION MODELS
 CREATE TABLE IF NOT EXISTS prediction_models (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -89,16 +87,16 @@ CREATE TABLE IF NOT EXISTS prediction_models (
   precision REAL,
   recall REAL,
   f1_score REAL,
-  training_date INTEGER NOT NULL,
-  last_used INTEGER NOT NULL DEFAULT (unixepoch()),
+  training_date TIMESTAMP NOT NULL,
+  last_used TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   file_path TEXT
 );
 
--- Create predictions table
+-- PREDICTIONS
 CREATE TABLE IF NOT EXISTS predictions (
   id TEXT PRIMARY KEY,
   model_id TEXT NOT NULL REFERENCES prediction_models(id),
-  generated_date INTEGER NOT NULL DEFAULT (unixepoch()),
+  generated_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   predicted_timeframe TEXT NOT NULL,
   target_type TEXT NOT NULL,
   target_value TEXT NOT NULL,
@@ -110,24 +108,24 @@ CREATE TABLE IF NOT EXISTS predictions (
   explanation TEXT,
   input_features TEXT NOT NULL,
   verified INTEGER DEFAULT 0,
-  verified_date INTEGER
+  verified_date TIMESTAMP
 );
 
--- Create indicators table
+-- INDICATORS
 CREATE TABLE IF NOT EXISTS indicators (
   id TEXT PRIMARY KEY,
   type TEXT NOT NULL CHECK (type IN ('ip', 'domain', 'url', 'hash', 'email')),
   value TEXT NOT NULL,
   malicious_score REAL NOT NULL,
-  first_seen INTEGER NOT NULL,
-  last_seen INTEGER NOT NULL,
+  first_seen TIMESTAMP NOT NULL,
+  last_seen TIMESTAMP NOT NULL,
   source TEXT NOT NULL,
   associated_attack_types TEXT,
   tags TEXT,
   source_data TEXT
 );
 
--- Create alerts table
+-- ALERTS
 CREATE TABLE IF NOT EXISTS alerts (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -137,12 +135,12 @@ CREATE TABLE IF NOT EXISTS alerts (
   type TEXT NOT NULL CHECK (type IN ('vulnerability', 'attack', 'prediction', 'indicator')),
   related_item_id TEXT,
   related_item_type TEXT,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   read INTEGER DEFAULT 0,
-  read_at INTEGER
+  read_at TIMESTAMP
 );
 
--- Create data_fetch_logs table
+-- DATA FETCH LOGS
 CREATE TABLE IF NOT EXISTS data_fetch_logs (
   id TEXT PRIMARY KEY,
   source TEXT NOT NULL,
@@ -150,13 +148,13 @@ CREATE TABLE IF NOT EXISTS data_fetch_logs (
   request_params TEXT,
   response_status INTEGER,
   items_retrieved INTEGER,
-  start_time INTEGER NOT NULL,
-  end_time INTEGER NOT NULL,
+  start_time TIMESTAMP NOT NULL,
+  end_time TIMESTAMP NOT NULL,
   success INTEGER NOT NULL,
   error_message TEXT
 );
 
--- Create indices for better query performance
+-- INDICES
 CREATE INDEX IF NOT EXISTS idx_vulnerabilities_published_date ON vulnerabilities(published_date);
 CREATE INDEX IF NOT EXISTS idx_vulnerabilities_severity ON vulnerabilities(severity);
 CREATE INDEX IF NOT EXISTS idx_vulnerabilities_exploited ON vulnerabilities(exploited_in_wild);
