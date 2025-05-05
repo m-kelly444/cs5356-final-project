@@ -37,10 +37,16 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
           
-          // Compare password with stored hash
+          // Check if we have a password hash - use user.password instead of user.passwordHash
+          if (!user.password || typeof user.password !== 'string') {
+            console.error('Invalid password hash format:', typeof user.password);
+            return null;
+          }
+          
+          // Compare password with stored hash - use user.password
           const passwordMatch = await bcrypt.compare(
-            credentials.password,
-            user.passwordHash
+            credentials.password.toString(),
+            user.password // Use user.password instead of user.passwordHash
           );
           
           // If password doesn't match, return null

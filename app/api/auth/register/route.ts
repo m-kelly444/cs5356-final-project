@@ -36,7 +36,7 @@ export async function POST(req: Request) {
         id: uuidv4(),
         name,
         email,
-        password: hashedPassword, // Changed from passwordHash to match database column name
+        passwordHash: hashedPassword, // Change to passwordHash to match schema
         role: 'user',
         createdAt: new Date(),
         updatedAt: new Date(),
