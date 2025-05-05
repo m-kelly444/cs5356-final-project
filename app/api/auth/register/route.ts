@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { db, schema } from '@/lib/db'; // Import schema as well
+import { db, schema } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import { eq } from 'drizzle-orm';
 
@@ -14,12 +14,13 @@ export async function POST(req: Request) {
     }
 
     // Check if user already exists using Drizzle syntax
-    const existingUsers = await db.select()
+    const existingUsers = await db
+      .select()
       .from(schema.users)
       .where(eq(schema.users.email, email))
       .limit(1);
     
-    const existingUser = existingUsers[0];
+    const existingUser = existingUsers.length > 0 ? existingUsers[0] : null;
 
     if (existingUser) {
       return new NextResponse('Email already in use', { status: 409 });
@@ -29,12 +30,13 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create new user using Drizzle syntax
-    await db.insert(schema.users)
+    await db
+      .insert(schema.users)
       .values({
         id: uuidv4(),
         name,
         email,
-        password_hash: hashedPassword,
+        password_hash: hashedPassword, // Adjust if your column name is different
         role: 'user',
         created_at: new Date(),
         updated_at: new Date(),
