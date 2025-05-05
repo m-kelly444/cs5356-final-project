@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import prisma from '@/lib/db'; // Make sure this path matches your actual Prisma client
+import { db } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request) {
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     }
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await db.user.findUnique({
       where: { email },
     });
 
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create new user
-    await prisma.user.create({
+    await db.user.create({
       data: {
         id: uuidv4(), // If you use cuid(), replace this with cuid()
         name,
