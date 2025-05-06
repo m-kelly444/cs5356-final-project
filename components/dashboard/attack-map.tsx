@@ -306,16 +306,16 @@ const AttackMap: React.FC<AttackMapProps> = ({ attacks }) => {
           .attr('class', 'attack-dot')
           .style('filter', 'url(#glow)')
           .attr('transform', `translate(${source[0]}, ${source[1]})`)
-          .on('mouseover', () => {
+          .on('mouseover', function(event) {
             setActiveAttack(attack);
             
             if (tooltipRef.current) {
-              tooltipRef.current.style.left = `${d3.event.pageX + 10}px`;
-              tooltipRef.current.style.top = `${d3.event.pageY + 10}px`;
+              tooltipRef.current.style.left = `${event.pageX + 10}px`;
+              tooltipRef.current.style.top = `${event.pageY + 10}px`;
               tooltipRef.current.style.display = 'block';
             }
           })
-          .on('mouseout', () => {
+          .on('mouseout', function() {
             setActiveAttack(null);
             
             if (tooltipRef.current) {
@@ -372,17 +372,16 @@ const AttackMap: React.FC<AttackMapProps> = ({ attacks }) => {
         .attr('opacity', 0.9)
         .attr('class', 'target-point')
         .style('filter', 'url(#glow)')
-        .on('mouseover', () => {
+        .on('mouseover', function(event) {
           setActiveAttack(attack);
           
           if (tooltipRef.current) {
-            const event = d3.event as MouseEvent;
             tooltipRef.current.style.left = `${event.pageX + 10}px`;
             tooltipRef.current.style.top = `${event.pageY + 10}px`;
             tooltipRef.current.style.display = 'block';
           }
         })
-        .on('mouseout', () => {
+        .on('mouseout', function() {
           setActiveAttack(null);
           
           if (tooltipRef.current) {
