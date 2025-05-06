@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { feature } from 'topojson-client';
 import { Topology, GeometryCollection } from 'topojson-specification';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 // Types
 interface Attack {
@@ -16,6 +18,9 @@ interface Attack {
   targetedSector: string;
   targetedRegion: string;
   impactLevel: number;
+  title?: string;
+  description?: string;
+  source?: string;
 }
 
 interface AttackNode {
@@ -27,6 +32,7 @@ interface AttackNode {
   date: string;
   sector: string;
   region: string;
+  title?: string;
 }
 
 interface AttackMapProps {
@@ -75,8 +81,15 @@ const AttackMap: React.FC<AttackMapProps> = ({ attacks }) => {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [worldData, setWorldData] = useState<any>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [activeAttack, setActiveAttack] = useState<AttackNode | null>(null);
+  const [filters, setFilters] = useState({
+    attackTypes: [] as string[],
+    regions: [] as string[],
+    sectors: [] as string[],
+    minImpact: 0
+  });
   
-  // Handle resize for responsive design (Lecture 5)
+  // Handle resize for responsive design
   useEffect(() => {
     const handleResize = () => {
       if (svgRef.current) {
@@ -98,348 +111,479 @@ const AttackMap: React.FC<AttackMapProps> = ({ attacks }) => {
     const fetchGeoData = async () => {
       try {
         const response = await fetch('/data/world-110m.json');
-        const topology = await response.json() as Topology;
-        
-        // Convert TopoJSON to GeoJSON
-        if (topology.objects.countries) {
-          const geoData = feature(
-            topology,
-            topology.objects.countries as GeometryCollection
-          );
-          setWorldData(geoData);
-        }
+        const data = await response.json();
+        setWorldData(data);
       } catch (error) {
-        console.error('Error loading map data:', error);
+        console.error('Error fetching world map data:', error);
       }
     };
     
     fetchGeoData();
   }, []);
   
-  // Convert attack data to visualization nodes
-  const processAttackData = (attacks: Attack[]): AttackNode[] => {
-    return attacks.map(attack => {
-      // Determine target coordinates based on region
-      let targetCoords = regionCoordinates[attack.targetedRegion] || regionCoordinates['Global'];
-      
-      // Add a small random offset to prevent overlaps
-      targetCoords = [
-        targetCoords[0] + (Math.random() * 2 - 1) * 5,
-        targetCoords[1] + (Math.random() * 2 - 1) * 5
-      ];
-      
-      // For source, pick a random different region
-      const regions = Object.keys(regionCoordinates).filter(r => 
-        r !== attack.targetedRegion && r !== 'Global'
-      );
-      const sourceRegion = regions[Math.floor(Math.random() * regions.length)];
-      let sourceCoords = regionCoordinates[sourceRegion] || regionCoordinates['Global'];
-      
-      // Add a small random offset
-      sourceCoords = [
-        sourceCoords[0] + (Math.random() * 2 - 1) * 5,
-        sourceCoords[1] + (Math.random() * 2 - 1) * 5
-      ];
-      
-      return {
-        id: attack.id,
-        source: sourceCoords as [number, number],
-        target: targetCoords as [number, number],
-        attackType: attack.attackType,
-        impactLevel: attack.impactLevel,
-        date: new Date(attack.attackDate).toLocaleDateString(),
-        sector: attack.targetedSector,
-        region: attack.targetedRegion
-      };
-    });
+  // Process attacks into nodes with coordinates
+  const processAttacks = (): AttackNode[] => {
+    if (!attacks?.length) return [];
+    
+    return attacks
+      .filter(attack => {
+        // Apply filters
+        const passesTypeFilter = filters.attackTypes.length === 0 || 
+          filters.attackTypes.includes(attack.attackType);
+        const passesRegionFilter = filters.regions.length === 0 || 
+          filters.regions.includes(attack.targetedRegion);
+        const passesSectorFilter = filters.sectors.length === 0 || 
+          filters.sectors.includes(attack.targetedSector);
+        const passesImpactFilter = attack.impactLevel >= filters.minImpact;
+        
+        return passesTypeFilter && passesRegionFilter && 
+          passesSectorFilter && passesImpactFilter;
+      })
+      .map(attack => {
+        // Get source coordinates (random point for visual variety)
+        const sourceRegion = Object.keys(regionCoordinates).find(r => 
+          Math.random() > 0.7 ? true : r !== attack.targetedRegion
+        ) || 'Global';
+        
+        const sourceCoords = regionCoordinates[sourceRegion] || [0, 0];
+        // Add some randomness to source coordinates
+        const jitteredSourceCoords: [number, number] = [
+          sourceCoords[0] + (Math.random() * 20 - 10),
+          sourceCoords[1] + (Math.random() * 20 - 10)
+        ];
+        
+        // Get target coordinates
+        const targetCoords = regionCoordinates[attack.targetedRegion] || [0, 0];
+        // Add some randomness to target coordinates
+        const jitteredTargetCoords: [number, number] = [
+          targetCoords[0] + (Math.random() * 10 - 5),
+          targetCoords[1] + (Math.random() * 10 - 5)
+        ];
+        
+        // Format date
+        const date = new Date(attack.attackDate).toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+        
+        return {
+          id: attack.id,
+          source: jitteredSourceCoords,
+          target: jitteredTargetCoords,
+          attackType: attack.attackType,
+          impactLevel: attack.impactLevel,
+          date,
+          sector: attack.targetedSector,
+          region: attack.targetedRegion,
+          title: attack.title
+        };
+      });
   };
   
-  // Render the map
+  // Render map
   useEffect(() => {
-    if (!worldData || !svgRef.current || !tooltipRef.current || dimensions.width === 0 || !attacks.length) {
-      return;
-    }
+    if (!svgRef.current || !worldData || !dimensions.width) return;
     
     const svg = d3.select(svgRef.current);
-    const tooltip = d3.select(tooltipRef.current);
-    
-    // Clear previous rendering
     svg.selectAll('*').remove();
+    
+    const { width, height } = dimensions;
     
     // Create projection
     const projection = d3.geoMercator()
-      .scale((dimensions.width + 1) / 2 / Math.PI)
-      .translate([dimensions.width / 2, dimensions.height / 1.5]);
+      .fitSize([width, height], feature(worldData, worldData.objects.countries))
+      .center([0, 20])
+      .scale(width / 6)
+      .translate([width / 2, height / 2]);
     
     // Create path generator
-    const pathGenerator = d3.geoPath().projection(projection);
+    const pathGenerator = d3.geoPath()
+      .projection(projection);
     
-    // Add a black background rect for the globe effect
+    // Draw background
     svg.append('rect')
-      .attr('width', dimensions.width)
-      .attr('height', dimensions.height)
-      .attr('fill', '#111')
-      .attr('rx', 20); // Round corners
+      .attr('width', width)
+      .attr('height', height)
+      .attr('fill', '#0F172A')
+      .attr('rx', 8)
+      .attr('ry', 8);
     
-    // Create a group for the map
-    const mapGroup = svg.append('g');
+    // Create container for countries
+    const mapGroup = svg.append('g')
+      .attr('class', 'map-group');
     
-    // Draw world map
-    mapGroup.selectAll('.country')
-      .data(worldData.features)
+    // Draw countries
+    mapGroup.append('g')
+      .attr('class', 'countries')
+      .selectAll('path')
+      .data(feature(worldData, worldData.objects.countries).features)
       .enter()
       .append('path')
-      .attr('class', 'country')
       .attr('d', pathGenerator)
-      .attr('fill', '#1e293b')
-      .attr('stroke', '#334155')
+      .attr('fill', '#1E293B')
+      .attr('stroke', '#0F172A')
       .attr('stroke-width', 0.5);
     
-    // Add a subtle grid overlay for cyberpunk effect
-    const gridSize = 20;
-    const gridGroup = svg.append('g').attr('class', 'grid');
+    // Draw longitude/latitude grid
+    const gridGroup = svg.append('g')
+      .attr('class', 'grid-lines')
+      .attr('stroke', '#334155')
+      .attr('stroke-width', 0.2)
+      .attr('stroke-dasharray', '2,2');
     
-    // Horizontal grid lines
-    for (let y = 0; y < dimensions.height; y += gridSize) {
-      gridGroup.append('line')
-        .attr('x1', 0)
-        .attr('y1', y)
-        .attr('x2', dimensions.width)
-        .attr('y2', y)
-        .attr('stroke', 'rgba(0, 255, 255, 0.1)')
-        .attr('stroke-width', 0.5);
+    // Longitude lines
+    for (let i = -180; i <= 180; i += 30) {
+      const lineData = [
+        { lon: i, lat: -85 },
+        { lon: i, lat: 85 }
+      ];
+      
+      const lineGenerator = d3.line<{lon: number, lat: number}>()
+        .x(d => projection([d.lon, d.lat])![0])
+        .y(d => projection([d.lon, d.lat])![1]);
+      
+      gridGroup.append('path')
+        .attr('d', lineGenerator(lineData))
+        .attr('fill', 'none');
     }
     
-    // Vertical grid lines
-    for (let x = 0; x < dimensions.width; x += gridSize) {
-      gridGroup.append('line')
-        .attr('x1', x)
-        .attr('y1', 0)
-        .attr('x2', x)
-        .attr('y2', dimensions.height)
-        .attr('stroke', 'rgba(0, 255, 255, 0.1)')
-        .attr('stroke-width', 0.5);
+    // Latitude lines
+    for (let i = -60; i <= 80; i += 30) {
+      const lineData = [];
+      for (let lon = -180; lon <= 180; lon += 5) {
+        lineData.push({ lon, lat: i });
+      }
+      
+      const lineGenerator = d3.line<{lon: number, lat: number}>()
+        .x(d => projection([d.lon, d.lat])![0])
+        .y(d => projection([d.lon, d.lat])![1])
+        .curve(d3.curveCardinal);
+      
+      gridGroup.append('path')
+        .attr('d', lineGenerator(lineData))
+        .attr('fill', 'none');
     }
     
     // Process attack data
-    const attackNodes = processAttackData(attacks);
+    const attackNodes = processAttacks();
     
-    // Create defs for gradient and filters
+    // Create attack lines
+    const attackLinesGroup = svg.append('g')
+      .attr('class', 'attack-lines');
+    
+    // Draw attack lines
+    attackNodes.forEach((attack, i) => {
+      const source = projection(attack.source)!;
+      const target = projection(attack.target)!;
+      
+      // Calculate curved path
+      const dx = target[0] - source[0];
+      const dy = target[1] - source[1];
+      const dr = Math.sqrt(dx * dx + dy * dy) * 1.2;
+      
+      // Draw curved line
+      attackLinesGroup.append('path')
+        .attr('d', `M${source[0]},${source[1]}A${dr},${dr} 0 0,1 ${target[0]},${target[1]}`)
+        .attr('fill', 'none')
+        .attr('stroke', attackTypeColors[attack.attackType] || attackTypeColors.default)
+        .attr('stroke-width', Math.min(3, attack.impactLevel / 3))
+        .attr('stroke-dasharray', `${attack.impactLevel * 2},${attack.impactLevel}`)
+        .attr('opacity', 0.7)
+        .attr('class', 'attack-line')
+        .style('filter', 'url(#glow)')
+        .style('animation', `pulse ${3 + Math.random() * 2}s infinite alternate`);
+      
+      // Add a moving dot along the path
+      const path = attackLinesGroup.select('path').node();
+      
+      if (path) {
+        // Draw animated dot
+        attackLinesGroup.append('circle')
+          .attr('r', attack.impactLevel / 3 + 1)
+          .attr('fill', attackTypeColors[attack.attackType] || attackTypeColors.default)
+          .attr('opacity', 0.8)
+          .attr('class', 'attack-dot')
+          .style('filter', 'url(#glow)')
+          .attr('transform', `translate(${source[0]}, ${source[1]})`)
+          .on('mouseover', () => {
+            setActiveAttack(attack);
+            
+            if (tooltipRef.current) {
+              tooltipRef.current.style.left = `${d3.event.pageX + 10}px`;
+              tooltipRef.current.style.top = `${d3.event.pageY + 10}px`;
+              tooltipRef.current.style.display = 'block';
+            }
+          })
+          .on('mouseout', () => {
+            setActiveAttack(null);
+            
+            if (tooltipRef.current) {
+              tooltipRef.current.style.display = 'none';
+            }
+          });
+      }
+    });
+    
+    // Add SVG defs for filter effects
     const defs = svg.append('defs');
     
     // Add glow filter
-    defs.append('filter')
+    const filter = defs.append('filter')
       .attr('id', 'glow')
-      .append('feGaussianBlur')
-      .attr('stdDeviation', '2.5')
+      .attr('x', '-50%')
+      .attr('y', '-50%')
+      .attr('width', '200%')
+      .attr('height', '200%');
+    
+    filter.append('feGaussianBlur')
+      .attr('stdDeviation', 2.5)
       .attr('result', 'coloredBlur');
     
-    // Add arrow marker for attack lines
-    defs.append('marker')
-      .attr('id', 'arrow')
-      .attr('viewBox', '0 -5 10 10')
-      .attr('refX', 5)
-      .attr('refY', 0)
-      .attr('markerWidth', 6)
-      .attr('markerHeight', 6)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', 'rgba(255, 255, 255, 0.7)');
+    const feMerge = filter.append('feMerge');
+    feMerge.append('feMergeNode').attr('in', 'coloredBlur');
+    feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
     
-    // Add gradients for each attack type
-    Object.entries(attackTypeColors).forEach(([type, color]) => {
-      const gradient = defs.append('linearGradient')
-        .attr('id', `gradient-${type}`)
-        .attr('x1', '0%')
-        .attr('y1', '0%')
-        .attr('x2', '100%')
-        .attr('y2', '100%');
+    // Add target markers
+    const targetMarkers = svg.append('g')
+      .attr('class', 'target-markers');
+    
+    attackNodes.forEach((attack) => {
+      const target = projection(attack.target)!;
       
-      gradient.append('stop')
-        .attr('offset', '0%')
-        .attr('stop-color', color)
-        .attr('stop-opacity', 0.8);
+      // Draw pulse animation
+      targetMarkers.append('circle')
+        .attr('cx', target[0])
+        .attr('cy', target[1])
+        .attr('r', 5 + (attack.impactLevel / 2))
+        .attr('fill', 'none')
+        .attr('stroke', attackTypeColors[attack.attackType] || attackTypeColors.default)
+        .attr('stroke-width', 1)
+        .attr('opacity', 0.8)
+        .attr('class', 'target-pulse')
+        .style('animation', `pulse-expand 3s infinite`);
       
-      gradient.append('stop')
-        .attr('offset', '100%')
-        .attr('stop-color', color)
-        .attr('stop-opacity', 0.2);
+      // Draw target point
+      targetMarkers.append('circle')
+        .attr('cx', target[0])
+        .attr('cy', target[1])
+        .attr('r', 3 + (attack.impactLevel / 10))
+        .attr('fill', attackTypeColors[attack.attackType] || attackTypeColors.default)
+        .attr('opacity', 0.9)
+        .attr('class', 'target-point')
+        .style('filter', 'url(#glow)')
+        .on('mouseover', () => {
+          setActiveAttack(attack);
+          
+          if (tooltipRef.current) {
+            const event = d3.event as MouseEvent;
+            tooltipRef.current.style.left = `${event.pageX + 10}px`;
+            tooltipRef.current.style.top = `${event.pageY + 10}px`;
+            tooltipRef.current.style.display = 'block';
+          }
+        })
+        .on('mouseout', () => {
+          setActiveAttack(null);
+          
+          if (tooltipRef.current) {
+            tooltipRef.current.style.display = 'none';
+          }
+        });
     });
     
-    // Add pulsing animation
-    const pulseAnimation = defs
-      .append('animate')
-      .attr('id', 'pulse')
-      .attr('attributeName', 'r')
-      .attr('values', '5;8;5')
-      .attr('dur', '2s')
-      .attr('repeatCount', 'indefinite');
-    
-    // Draw attack flow lines
-    svg.selectAll('.attack-line')
-      .data(attackNodes)
-      .enter()
-      .append('path')
-      .attr('class', 'attack-line')
-      .attr('d', d => {
-        const sourcePoint = projection(d.source) || [0, 0];
-        const targetPoint = projection(d.target) || [0, 0];
-        
-        // Create curved path between points
-        return `M${sourcePoint[0]},${sourcePoint[1]} Q${(sourcePoint[0] + targetPoint[0]) / 2},${
-          (sourcePoint[1] + targetPoint[1]) / 2 - 50} ${targetPoint[0]},${targetPoint[1]}`;
-      })
-      .attr('stroke', d => attackTypeColors[d.attackType] || attackTypeColors.default)
-      .attr('stroke-width', d => 1 + (d.impactLevel / 10))
-      .attr('fill', 'none')
-      .attr('stroke-opacity', 0.4)
-      .attr('marker-end', 'url(#arrow)')
-      .style('stroke-dasharray', '4,4')
-      .style('animation', d => `dash ${2 + Math.random() * 3}s linear infinite`);
-    
-    // Draw attack origin points
-    svg.selectAll('.attack-origin')
-      .data(attackNodes)
-      .enter()
-      .append('circle')
-      .attr('class', 'attack-origin')
-      .attr('cx', d => projection(d.source)?.[0] || 0)
-      .attr('cy', d => projection(d.source)?.[1] || 0)
-      .attr('r', 3)
-      .attr('fill', d => attackTypeColors[d.attackType] || attackTypeColors.default)
-      .attr('filter', 'url(#glow)')
-      .attr('opacity', 0.7);
-    
-    // Draw attack target points
-    svg.selectAll('.attack-target')
-      .data(attackNodes)
-      .enter()
-      .append('circle')
-      .attr('class', 'attack-target')
-      .attr('cx', d => projection(d.target)?.[0] || 0)
-      .attr('cy', d => projection(d.target)?.[1] || 0)
-      .attr('r', d => 3 + (d.impactLevel / 2))
-      .attr('fill', d => attackTypeColors[d.attackType] || attackTypeColors.default)
-      .attr('stroke', '#fff')
-      .attr('stroke-width', 0.5)
-      .attr('filter', 'url(#glow)')
-      .attr('opacity', 0.9)
-      .on('mouseover', (event, d) => {
-        tooltip
-          .style('opacity', 1)
-          .style('left', `${event.pageX + 10}px`)
-          .style('top', `${event.pageY - 30}px`)
-          .html(`
-            <div class="font-bold text-xs mb-1">${formatAttackType(d.attackType)}</div>
-            <div class="text-xs">Target: ${d.sector} (${d.region})</div>
-            <div class="text-xs">Date: ${d.date}</div>
-            <div class="text-xs">Impact: ${d.impactLevel.toFixed(1)}/10</div>
-          `);
-      })
-      .on('mouseout', () => {
-        tooltip.style('opacity', 0);
-      });
-    
-    // Add pulsing effect to new attacks
-    svg.selectAll('.attack-pulse')
-      .data(attackNodes.filter((_, i) => i < 5)) // Only most recent attacks pulse
-      .enter()
-      .append('circle')
-      .attr('class', 'attack-pulse')
-      .attr('cx', d => projection(d.target)?.[0] || 0)
-      .attr('cy', d => projection(d.target)?.[1] || 0)
-      .attr('r', 5)
-      .attr('fill', 'none')
-      .attr('stroke', d => attackTypeColors[d.attackType] || attackTypeColors.default)
-      .attr('stroke-width', 1)
-      .attr('opacity', 0.8)
-      .style('animation', 'pulse 1.5s ease-out infinite');
-    
-    // Add legend
-    const legendData = [
-      { type: 'ransomware', label: 'Ransomware' },
-      { type: 'dataBreach', label: 'Data Breach' },
-      { type: 'ddos', label: 'DDoS' },
-      { type: 'zeroDay', label: 'Zero-Day' },
-      { type: 'supplyChain', label: 'Supply Chain' },
-    ];
-    
-    const legend = svg.append('g')
-      .attr('transform', `translate(20, ${dimensions.height - (legendData.length * 25) - 20})`);
-    
-    const legendItems = legend.selectAll('.legend-item')
-      .data(legendData)
-      .enter()
-      .append('g')
-      .attr('class', 'legend-item')
-      .attr('transform', (d, i) => `translate(0, ${i * 25})`);
-    
-    legendItems.append('circle')
-      .attr('r', 6)
-      .attr('fill', d => attackTypeColors[d.type])
-      .attr('filter', 'url(#glow)');
-    
-    legendItems.append('text')
-      .attr('x', 15)
-      .attr('y', 5)
-      .text(d => d.label)
-      .attr('fill', '#fff')
-      .attr('font-size', '12px');
-    
-  }, [worldData, dimensions, attacks]);
+  }, [worldData, dimensions, attacks, filters]);
+  
+  // Get unique filter values
+  const getUniqueAttackTypes = () => {
+    return [...new Set(attacks.map(a => a.attackType))];
+  };
+  
+  const getUniqueRegions = () => {
+    return [...new Set(attacks.map(a => a.targetedRegion))];
+  };
+  
+  const getUniqueSectors = () => {
+    return [...new Set(attacks.map(a => a.targetedSector))];
+  };
+  
+  // Toggle filter item
+  const toggleFilter = (type: 'attackTypes' | 'regions' | 'sectors', value: string) => {
+    setFilters(prev => {
+      if (prev[type].includes(value)) {
+        return {
+          ...prev,
+          [type]: prev[type].filter(v => v !== value)
+        };
+      } else {
+        return {
+          ...prev,
+          [type]: [...prev[type], value]
+        };
+      }
+    });
+  };
+  
+  // Reset filters
+  const resetFilters = () => {
+    setFilters({
+      attackTypes: [],
+      regions: [],
+      sectors: [],
+      minImpact: 0
+    });
+  };
+  
+  // Get color for attack type
+  const getAttackTypeColor = (type: string) => {
+    return attackTypeColors[type] || attackTypeColors.default;
+  };
   
   return (
-    <div className="relative w-full h-full">
-      <svg 
-        ref={svgRef} 
-        width="100%" 
-        height="100%"
-        className="rounded-lg overflow-hidden"
-      />
-      <div 
-        ref={tooltipRef}
-        className="absolute bg-gray-900/90 border border-cyan-500/50 rounded p-2 text-white text-sm pointer-events-none opacity-0 transition-opacity z-10"
-        style={{ 
-          filter: 'drop-shadow(0 0 5px rgba(0, 255, 255, 0.5))',
-          backdropFilter: 'blur(4px)'
-        }}
-      />
-      <style jsx>{`
-        @keyframes dash {
-          to {
-            stroke-dashoffset: 16;
-          }
-        }
+    <div className="w-full space-y-4">
+      {/* Filters */}
+      <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Attack type filters */}
+        <Card variant="cyberOutline" className="p-3">
+          <h3 className="text-sm font-semibold mb-2">Attack Types</h3>
+          <div className="flex flex-wrap gap-2">
+            {getUniqueAttackTypes().map(type => (
+              <Button
+                key={type}
+                size="sm"
+                variant={filters.attackTypes.includes(type) ? "cyber" : "cyberGhost"}
+                className="text-xs"
+                onClick={() => toggleFilter('attackTypes', type)}
+              >
+                <span 
+                  className="w-2 h-2 rounded-full mr-1" 
+                  style={{ backgroundColor: getAttackTypeColor(type) }}
+                />
+                {type}
+              </Button>
+            ))}
+          </div>
+        </Card>
+        
+        {/* Region filters */}
+        <Card variant="cyberOutline" className="p-3">
+          <h3 className="text-sm font-semibold mb-2">Regions</h3>
+          <div className="flex flex-wrap gap-2">
+            {getUniqueRegions().map(region => (
+              <Button
+                key={region}
+                size="sm"
+                variant={filters.regions.includes(region) ? "cyber" : "cyberGhost"}
+                className="text-xs"
+                onClick={() => toggleFilter('regions', region)}
+              >
+                {region}
+              </Button>
+            ))}
+          </div>
+        </Card>
+        
+        {/* Sector filters */}
+        <Card variant="cyberOutline" className="p-3">
+          <h3 className="text-sm font-semibold mb-2">Sectors</h3>
+          <div className="flex flex-wrap gap-2">
+            {getUniqueSectors().map(sector => (
+              <Button
+                key={sector}
+                size="sm"
+                variant={filters.sectors.includes(sector) ? "cyber" : "cyberGhost"}
+                className="text-xs"
+                onClick={() => toggleFilter('sectors', sector)}
+              >
+                {sector}
+              </Button>
+            ))}
+          </div>
+        </Card>
+      </div>
+      
+      {/* Reset filters button */}
+      {(filters.attackTypes.length > 0 || filters.regions.length > 0 || filters.sectors.length > 0) && (
+        <div className="flex justify-end mb-2">
+          <Button variant="cyberGhost" size="sm" onClick={resetFilters}>
+            Reset Filters
+          </Button>
+        </div>
+      )}
+      
+      {/* Map container */}
+      <div className="relative w-full h-full rounded-lg overflow-hidden border border-gray-800">
+        <svg
+          ref={svgRef}
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+          preserveAspectRatio="xMidYMid meet"
+          className="bg-gray-900/50 rounded-lg"
+        />
+        
+        {/* Tooltip */}
+        <div
+          ref={tooltipRef}
+          className="absolute hidden p-3 bg-gray-900/90 backdrop-blur-md border border-gray-700 rounded-md shadow-lg z-10 max-w-xs"
+          style={{ pointerEvents: 'none' }}
+        >
+          {activeAttack && (
+            <div className="space-y-1 text-sm">
+              <div className="font-bold text-white">
+                {activeAttack.title || `${activeAttack.attackType} Attack`}
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: getAttackTypeColor(activeAttack.attackType) }}
+                />
+                <span className="text-gray-300">{activeAttack.attackType}</span>
+              </div>
+              <div className="text-gray-400">
+                Target: {activeAttack.region}
+              </div>
+              <div className="text-gray-400">
+                Sector: {activeAttack.sector}
+              </div>
+              <div className="text-gray-400">
+                Date: {activeAttack.date}
+              </div>
+              <div className="text-gray-400">
+                Impact: {activeAttack.impactLevel}/10
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Legend */}
+      <div className="flex justify-center mt-4 flex-wrap gap-4">
+        {getUniqueAttackTypes().map(type => (
+          <div key={type} className="flex items-center space-x-2">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: getAttackTypeColor(type) }}
+            />
+            <span className="text-xs text-gray-400">{type}</span>
+          </div>
+        ))}
+      </div>
+      
+      {/* CSS for animations */}
+      <style jsx global>{`
         @keyframes pulse {
-          0% {
-            transform: scale(1);
-            opacity: 0.8;
-          }
-          100% {
-            transform: scale(2);
-            opacity: 0;
-          }
+          0% { opacity: 0.3; }
+          50% { opacity: 0.8; }
+          100% { opacity: 0.3; }
+        }
+        
+        @keyframes pulse-expand {
+          0% { transform: scale(0.5); opacity: 0.8; }
+          100% { transform: scale(1.5); opacity: 0; }
         }
       `}</style>
     </div>
   );
 };
-
-// Helper function to format attack types for display
-function formatAttackType(type: string): string {
-  const typeMap: Record<string, string> = {
-    'ransomware': 'Ransomware',
-    'dataBreach': 'Data Breach',
-    'ddos': 'DDoS Attack',
-    'zeroDay': 'Zero-Day Exploit',
-    'phishing': 'Phishing Campaign',
-    'supplyChain': 'Supply Chain Attack',
-    'insiderThreat': 'Insider Threat',
-    'malwareInfection': 'Malware Infection'
-  };
-  
-  return typeMap[type] || type;
-}
 
 export default AttackMap;

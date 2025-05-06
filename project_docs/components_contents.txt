@@ -1,0 +1,1672 @@
+# CONTENTS OF components/
+-----------------------------------------
+FILE: components/ui/card.tsx
+-----------------------------------------
+'use client';
+
+import React from 'react';
+import { cn } from '@/lib/utils/theme';
+import { cva, VariantProps } from 'class-variance-authority';
+
+// Card variants
+const cardVariants = cva(
+  "rounded-lg shadow",
+  {
+    variants: {
+      variant: {
+        default: "bg-card text-card-foreground",
+        destructive: "bg-destructive/10 text-destructive border-destructive/20",
+        outline: "border border-border bg-background",
+        
+        // Cyberpunk variants
+        cyber: "cyber-card",
+        cyberOutline: "bg-gray-900/70 backdrop-blur-md border border-cyan-500/30 shadow-md hover:shadow-cyan-500/20 transition-all duration-300",
+        cyberGlass: "glass-effect",
+        cyberDark: "bg-gray-900/90 backdrop-blur-md border border-gray-800 shadow-md",
+      },
+      hover: {
+        none: "",
+        glow: "hover:shadow-neon-blue transition-all duration-300",
+        scale: "hover:scale-102 transition-all duration-300",
+        border: "hover:border-cyan-500/50 transition-all duration-300",
+      },
+      animation: {
+        none: "",
+        pulse: "animate-pulse",
+        glow: "animate-glow",
+      }
+    },
+    defaultVariants: {
+      variant: "default",
+      hover: "none",
+      animation: "none",
+    }
+  }
+);
+
+// Card component props
+export interface CardProps extends 
+  React.HTMLAttributes<HTMLDivElement>,
+  VariantProps<typeof cardVariants> {}
+
+// Card component
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, variant, hover, animation, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(cardVariants({ variant, hover, animation }), className)}
+      {...props}
+    />
+  )
+);
+Card.displayName = "Card";
+
+// Card Header component props
+interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+// Card Header component
+const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn("flex flex-col space-y-1.5 p-6", className)}
+      {...props}
+    />
+  )
+);
+CardHeader.displayName = "CardHeader";
+
+// Card Title component props
+interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {}
+
+// Card Title component
+const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
+  ({ className, ...props }, ref) => (
+    <h3
+      ref={ref}
+      className={cn("text-xl font-semibold leading-none tracking-tight", className)}
+      {...props}
+    />
+  )
+);
+CardTitle.displayName = "CardTitle";
+
+// Card Description component props
+interface CardDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {}
+
+// Card Description component
+const CardDescription = React.forwardRef<HTMLParagraphElement, CardDescriptionProps>(
+  ({ className, ...props }, ref) => (
+    <p
+      ref={ref}
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
+    />
+-e 
+
+
+-----------------------------------------
+FILE: components/ui/loader.tsx
+-----------------------------------------
+'use client';
+
+import React from 'react';
+import { cn } from '@/lib/utils/theme';
+
+interface LoaderProps {
+  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'primary' | 'secondary' | 'cyber' | 'cyberPink';
+  text?: string;
+  textPosition?: 'top' | 'bottom' | 'right' | 'left' | 'none';
+  className?: string;
+}
+
+const Loader = ({
+  size = 'md',
+  variant = 'cyber',
+  text,
+  textPosition = 'bottom',
+  className,
+}: LoaderProps) => {
+  // Size mapping
+  const sizeMap = {
+    sm: {
+      container: 'h-4 w-4',
+      border: 'border-2',
+    },
+    md: {
+      container: 'h-8 w-8',
+      border: 'border-2',
+    },
+    lg: {
+      container: 'h-12 w-12',
+      border: 'border-3',
+    },
+  };
+  
+  // Variant mapping
+  const variantMap = {
+    default: {
+      border: 'border-gray-300',
+      borderTop: 'border-t-gray-800',
+      shadow: '',
+    },
+    primary: {
+      border: 'border-blue-300',
+      borderTop: 'border-t-blue-600',
+      shadow: '',
+    },
+    secondary: {
+      border: 'border-purple-300',
+      borderTop: 'border-t-purple-600',
+      shadow: '',
+    },
+    cyber: {
+      border: 'border-cyan-500/30',
+      borderTop: 'border-t-cyan-500',
+      shadow: 'shadow-neon-blue',
+    },
+    cyberPink: {
+      border: 'border-fuchsia-500/30',
+      borderTop: 'border-t-fuchsia-500',
+      shadow: 'shadow-neon-pink',
+    },
+  };
+  
+  // Choose styles based on props
+  const sizeStyle = sizeMap[size];
+  const variantStyle = variantMap[variant];
+  
+  // Container classes based on text position
+  const containerClasses = {
+    none: 'flex items-center justify-center',
+    top: 'flex flex-col-reverse items-center gap-2',
+    bottom: 'flex flex-col items-center gap-2',
+    right: 'flex flex-row items-center gap-2',
+    left: 'flex flex-row-reverse items-center gap-2',
+  };
+  
+  return (
+    <div className={cn(containerClasses[textPosition], className)}>
+      <div
+        className={cn(
+          'relative rounded-full animate-spin',
+          sizeStyle.container,
+          sizeStyle.border,
+          variantStyle.border,
+          variantStyle.shadow
+        )}
+      >
+        <div
+          className={cn(
+            'absolute inset-0 rounded-full',
+            sizeStyle.border,
+            variantStyle.borderTop
+          )}
+          style={{
+            clip: 'rect(0, 1em, 0.5em, 0)',
+          }}
+        />
+      </div>
+-e 
+
+
+-----------------------------------------
+FILE: components/ui/dialog.tsx
+-----------------------------------------
+'use client';
+
+import * as React from 'react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { cn } from '@/lib/utils/theme';
+import { X } from 'lucide-react';
+
+// Dialog Root
+const Dialog = DialogPrimitive.Root;
+
+// Dialog Trigger
+const DialogTrigger = DialogPrimitive.Trigger;
+
+// Dialog Portal
+const DialogPortal = ({
+  className,
+  children,
+  ...props
+}: DialogPrimitive.DialogPortalProps) => (
+  <DialogPrimitive.Portal className={cn(className)} {...props}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {children}
+    </div>
+  </DialogPrimitive.Portal>
+);
+DialogPortal.displayName = DialogPrimitive.Portal.displayName;
+
+// Dialog Overlay
+const DialogOverlay = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Overlay
+    ref={ref}
+    className={cn(
+      "fixed inset-0 z-50 bg-black/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      className
+    )}
+    {...props}
+  />
+));
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
+
+// Dialog Content
+const DialogContent = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    variant?: "default" | "cyber";
+  }
+>(({ className, children, variant = "default", ...props }, ref) => (
+  <DialogPortal>
+    <DialogOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed z-50 w-full max-w-lg scale-100 gap-4 p-6 opacity-100 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
+        variant === "default" && "bg-background border border-border rounded-lg shadow-lg",
+        variant === "cyber" && "cyber-card border-cyan-500/50 shadow-cyan-500/20",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+        <X className="h-4 w-4" />
+        <span className="sr-only">Close</span>
+      </DialogPrimitive.Close>
+    </DialogPrimitive.Content>
+  </DialogPortal>
+));
+DialogContent.displayName = DialogPrimitive.Content.displayName;
+
+// Dialog Header
+const DialogHeader = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col space-y-1.5 text-center sm:text-left",
+      className
+    )}
+    {...props}
+  />
+);
+DialogHeader.displayName = "DialogHeader";
+
+// Dialog Footer
+const DialogFooter = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      className
+    )}
+    {...props}
+  />
+);
+-e 
+
+
+-----------------------------------------
+FILE: components/ui/button.tsx
+-----------------------------------------
+'use client';
+
+import React from 'react';
+import { VariantProps, cva } from 'class-variance-authority';
+import { cn } from '@/lib/utils/theme';
+
+// Button variants using class-variance-authority
+const buttonVariants = cva(
+  // Base styles applied to all buttons
+  "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none",
+  {
+    variants: {
+      // Variant styles
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+        
+        // Cyberpunk variants
+        cyber: "border border-cyber-blue-500 bg-transparent text-cyber-blue-400 hover:bg-cyber-blue-900/20 hover:text-cyber-blue-300 hover:shadow-neon-blue transition-all duration-300",
+        cyberPrimary: "bg-gradient-to-r from-cyber-blue-600 to-cyber-blue-700 text-white hover:from-cyber-blue-500 hover:to-cyber-blue-600 shadow-md hover:shadow-neon-blue transition-all duration-300",
+        cyberSecondary: "bg-gradient-to-r from-cyber-pink-600 to-cyber-pink-700 text-white hover:from-cyber-pink-500 hover:to-cyber-pink-600 shadow-md hover:shadow-neon-pink transition-all duration-300",
+        cyberGhost: "bg-transparent text-cyan-400 hover:bg-cyan-900/20 hover:text-cyan-300 transition-all duration-300",
+      },
+      // Size styles
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+      // Animation styles
+      animation: {
+        none: "",
+        pulse: "animate-pulse",
+        glow: "animate-glow",
+      },
+    },
+    // Default variants
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+      animation: "none",
+    },
+  }
+);
+
+// Button props extend button element props and variant props
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
+
+// Button component
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, animation, asChild = false, ...props }, ref) => {
+    // If asChild is true, the button will render its children directly
+    const Comp = "button";
+    
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, animation, className }))}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+
+Button.displayName = "Button";
+
+export { Button, buttonVariants };-e 
+
+
+-----------------------------------------
+FILE: components/auth/register-form.tsx
+-----------------------------------------
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
+import { AuthFormErrors, RegistrationData } from '@/types/auth';
+
+export default function RegisterForm() {
+  const router = useRouter();
+  
+  // Form state
+  const [formData, setFormData] = useState<RegistrationData>({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<AuthFormErrors>({});
+  const [generalError, setGeneralError] = useState('');
+  
+  // Handle form field changes
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Clear error for the changed field
+    if (errors[name as keyof AuthFormErrors]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+  
+  // Validate form
+  const validateForm = (): boolean => {
+    const newErrors: AuthFormErrors = {};
+    
+    // Validate name
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    
+    // Validate email
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    // Validate password
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters long';
+    }
+    
+    // Validate password confirmation
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      setGeneralError('');
+      
+      // Submit registration request
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        // Registration failed
+        if (data.error?.fields) {
+          setErrors(data.error.fields);
+        } else {
+          setGeneralError(data.error?.message || 'Registration failed. Please try again.');
+        }
+-e 
+
+
+-----------------------------------------
+FILE: components/auth/login-form.tsx
+-----------------------------------------
+'use client';
+
+import type { ReactElement } from 'react';
+import { useState } from 'react';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+
+interface LoginFormProps {
+  callbackUrl?: string;
+}
+
+export default function LoginForm({ callbackUrl = '/dashboard' }: LoginFormProps): ReactElement {
+  const router = useRouter();
+  
+  // Form state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      setError('');
+      
+      // Attempt to sign in
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+      });
+      
+      if (result?.error) {
+        // Authentication failed
+        setError('Invalid email or password');
+        return;
+      }
+      
+      // Authentication successful, redirect
+      router.push(callbackUrl);
+      router.refresh();
+      
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Display error message if any */}
+      {error && (
+        <div className="text-red-400 bg-red-900/30 border border-red-800 p-3 rounded-md text-sm">
+          {error}
+        </div>
+      )}
+      
+      {/* Email field */}
+      <div className="space-y-2">
+        <label htmlFor="email" className="block text-sm font-medium">
+          Email address
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent focus:outline-none text-white"
+          placeholder="you@example.com"
+          disabled={isLoading}
+        />
+      </div>
+      
+      {/* Password field */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label htmlFor="password" className="block text-sm font-medium">
+            Password
+          </label>
+          <a href="#" className="text-xs text-cyan-400 hover:text-cyan-300">
+            Forgot password?
+          </a>
+        </div>
+        <input
+          id="password"
+          name="password"
+          type="password"
+-e 
+
+
+-----------------------------------------
+FILE: components/layout/nav.tsx
+-----------------------------------------
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
+
+interface NavLink {
+  name: string;
+  href: string;
+  active?: boolean;
+}
+
+interface NavDropdownItem extends NavLink {
+  description?: string;
+}
+
+interface NavDropdown {
+  name: string;
+  items: NavDropdownItem[];
+}
+
+interface NavbarProps {
+  transparent?: boolean;
+  centerLinks?: boolean;
+}
+
+export default function Nav({ transparent = false, centerLinks = false }: NavbarProps) {
+  const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  
+  // Main navigation links
+  const links: (NavLink | NavDropdown)[] = [
+    { name: 'Dashboard', href: '/dashboard' },
+    {
+      name: 'Threats',
+      items: [
+        { 
+          name: 'Overview', 
+          href: '/dashboard/threats',
+          description: 'Summary of current threats'
+        },
+        { 
+          name: 'Cyber Attacks', 
+          href: '/dashboard/threats/attacks',
+          description: 'Recent cyber attack data'
+        },
+        { 
+          name: 'Threat Actors', 
+          href: '/dashboard/threats/actors',
+          description: 'Known threat actor profiles'
+        },
+      ]
+    },
+    {
+      name: 'Vulnerabilities',
+      items: [
+        { 
+          name: 'Overview', 
+          href: '/dashboard/vulnerabilities',
+          description: 'Critical vulnerability dashboard'
+        },
+        { 
+          name: 'CISA KEV', 
+          href: '/dashboard/vulnerabilities/kev',
+          description: 'Known Exploited Vulnerabilities'
+        },
+        { 
+          name: 'NVD Data', 
+          href: '/dashboard/vulnerabilities/nvd',
+          description: 'National Vulnerability Database'
+        },
+      ]
+    },
+    { name: 'Attack Map', href: '/dashboard/attack-map' },
+    { name: 'Predictions', href: '/dashboard/predictions' },
+  ];
+  
+  // Handle scroll effect for transparent header
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    
+    if (transparent) {
+      window.addEventListener('scroll', handleScroll);
+      return () => window.removeEventListener('scroll', handleScroll);
+    }
+  }, [transparent]);
+  
+  // Handle clicking outside to close dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-dropdown]')) {
+        setActiveDropdown(null);
+      }
+    };
+-e 
+
+
+-----------------------------------------
+FILE: components/layout/footer.tsx
+-----------------------------------------
+'use client';
+
+import Link from 'next/link';
+import { Github, Twitter, Linkedin } from 'lucide-react';
+
+export default function Footer() {
+  return (
+    <footer className="bg-gray-900/30 backdrop-blur-sm border-t border-gray-800 py-6">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* About section */}
+          <div>
+            <h3 className="font-bold text-white mb-3">CyberPulse</h3>
+            <p className="text-sm text-gray-400 mb-4">
+              Real-time cyber threat intelligence platform powered by machine learning.
+              Predicting attacks before they happen.
+            </p>
+            <div className="flex space-x-4">
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                <Github size={20} />
+                <span className="sr-only">GitHub</span>
+              </a>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                <Twitter size={20} />
+                <span className="sr-only">Twitter</span>
+              </a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                <Linkedin size={20} />
+                <span className="sr-only">LinkedIn</span>
+              </a>
+            </div>
+          </div>
+          
+          {/* Quick links */}
+          <div>
+            <h3 className="font-bold text-white mb-3">Quick Links</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/dashboard" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard/threats" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  Threats
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard/vulnerabilities" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  Vulnerabilities
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard/attack-map" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  Attack Map
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard/predictions" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  Predictions
+                </Link>
+              </li>
+            </ul>
+          </div>
+          
+          {/* Resources */}
+          <div>
+            <h3 className="font-bold text-white mb-3">Resources</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  CISA KEV Catalog
+                </a>
+              </li>
+              <li>
+                <a href="https://nvd.nist.gov/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  National Vulnerability Database
+                </a>
+              </li>
+              <li>
+                <a href="https://www.mitre.org/attack" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  MITRE ATT&CK
+                </a>
+              </li>
+              <li>
+                <a href="https://www.virustotal.com/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  VirusTotal
+                </a>
+              </li>
+              <li>
+                <a href="https://urlhaus.abuse.ch/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                  URLhaus
+                </a>
+              </li>
+            </ul>
+          </div>
+          
+          {/* Legal */}
+          <div>
+            <h3 className="font-bold text-white mb-3">Legal</h3>
+-e 
+
+
+-----------------------------------------
+FILE: components/layout/header.tsx
+-----------------------------------------
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { signOut } from 'next-auth/react';
+import { Bell, Menu, X, User, LogOut, Settings, ChevronDown } from 'lucide-react';
+import { Button } from '../ui/button';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface HeaderProps {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    image?: string;
+    role?: string;
+  };
+}
+
+export default function Header({ user }: HeaderProps) {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  
+  // Handle scroll event to change header appearance
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+  
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('#profile-menu') && !target.closest('#profile-button')) {
+        setIsProfileMenuOpen(false);
+      }
+      if (!target.closest('#notifications-menu') && !target.closest('#notifications-button')) {
+        setIsNotificationsOpen(false);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+  
+  // Fetch notifications
+  useEffect(() => {
+    // Mock notifications for now
+    setNotifications([
+      {
+        id: '1',
+        title: 'Critical Vulnerability',
+        message: 'New critical vulnerability detected: CVE-2025-1234',
+        time: '10m ago',
+        read: false,
+        type: 'vulnerability'
+      },
+      {
+        id: '2',
+        title: 'Attack Prediction',
+        message: 'High probability of ransomware attacks in finance sector',
+        time: '1h ago',
+        read: false,
+        type: 'prediction'
+      },
+      {
+        id: '3',
+        title: 'System Update',
+        message: 'Platform updated to version 2.3.0',
+        time: '3h ago',
+        read: true,
+        type: 'system'
+      }
+    ]);
+  }, []);
+  
+  // Handle sign out
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: '/' });
+  };
+  
+  return (
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
+      isScrolled ? 'bg-gray-900/80 backdrop-blur-md shadow-md' : 'bg-transparent'
+    }`}>
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+-e 
+
+
+-----------------------------------------
+FILE: components/layout/sidebar.tsx
+-----------------------------------------
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { 
+  LayoutDashboard, Shield, Bug, Globe, Brain, 
+  Zap, Database, Layers, Settings, ChevronLeft, 
+  ChevronRight, ExternalLink
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+
+interface SidebarProps {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    image?: string;
+    role?: string;
+  };
+}
+
+export default function Sidebar({ user }: SidebarProps) {
+  const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  
+  // Check if mobile on mount and on resize
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+      if (window.innerWidth < 1024) {
+        setIsCollapsed(true);
+      }
+    };
+    
+    // Initial check
+    checkIsMobile();
+    
+    // Add event listener for window resize
+    window.addEventListener('resize', checkIsMobile);
+    
+    // Clean up event listener
+    return () => {
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
+  
+  // Navigation items with icons and paths
+  const navItems = [
+    {
+      name: 'Dashboard',
+      icon: <LayoutDashboard size={20} />,
+      path: '/dashboard',
+      exact: true,
+    },
+    {
+      name: 'Threats',
+      icon: <Shield size={20} />,
+      path: '/dashboard/threats',
+    },
+    {
+      name: 'Vulnerabilities',
+      icon: <Bug size={20} />,
+      path: '/dashboard/vulnerabilities',
+    },
+    {
+      name: 'Attack Map',
+      icon: <Globe size={20} />,
+      path: '/dashboard/attack-map',
+    },
+    {
+      name: 'Predictions',
+      icon: <Brain size={20} />,
+      path: '/dashboard/predictions',
+    },
+    {
+      section: 'Data',
+      items: [
+        {
+          name: 'CISA KEV',
+          icon: <Zap size={20} />,
+          path: '/dashboard/data/cisa',
+        },
+        {
+          name: 'NVD',
+          icon: <Database size={20} />,
+          path: '/dashboard/data/nvd',
+        },
+        {
+          name: 'Indicators',
+          icon: <Layers size={20} />,
+          path: '/dashboard/data/indicators',
+        },
+      ],
+    },
+    {
+      section: 'Settings',
+      items: [
+-e 
+
+
+-----------------------------------------
+FILE: components/dashboard/threat-card.tsx
+-----------------------------------------
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, AlertTriangle, Bug, Zap, Brain, ExternalLink } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+
+interface ThreatCardProps {
+  threat: {
+    id: string;
+    title: string;
+    type: 'attack' | 'vulnerability' | 'prediction' | 'indicator';
+    severity: number;
+    description: string;
+    date: number | string;
+    source?: string;
+    tags?: string[];
+    details?: any;
+  };
+}
+
+export default function ThreatCard({ threat }: ThreatCardProps) {
+  const [expanded, setExpanded] = useState(false);
+  
+  // Format date for display
+  const formatDate = (date: number | string) => {
+    const dateObj = typeof date === 'number' ? new Date(date) : new Date(date);
+    return formatDistanceToNow(dateObj, { addSuffix: true });
+  };
+  
+  // Get icon based on threat type
+  const getIcon = () => {
+    switch (threat.type) {
+      case 'attack':
+        return <Zap className="h-5 w-5 text-red-500" />;
+      case 'vulnerability':
+        return <Bug className="h-5 w-5 text-yellow-500" />;
+      case 'prediction':
+        return <Brain className="h-5 w-5 text-cyan-500" />;
+      case 'indicator':
+        return <AlertTriangle className="h-5 w-5 text-orange-500" />;
+      default:
+        return <AlertTriangle className="h-5 w-5 text-gray-500" />;
+    }
+  };
+  
+  // Get severity label and color
+  const getSeverityInfo = () => {
+    if (threat.severity >= 8) {
+      return {
+        label: 'Critical',
+        colorClass: 'bg-red-500',
+        textClass: 'text-red-400',
+        borderClass: 'border-red-500/50',
+      };
+    } else if (threat.severity >= 6) {
+      return {
+        label: 'High',
+        colorClass: 'bg-orange-500',
+        textClass: 'text-orange-400',
+        borderClass: 'border-orange-500/50',
+      };
+    } else if (threat.severity >= 4) {
+      return {
+        label: 'Medium',
+        colorClass: 'bg-yellow-500',
+        textClass: 'text-yellow-400',
+        borderClass: 'border-yellow-500/50',
+      };
+    } else if (threat.severity >= 2) {
+      return {
+        label: 'Low',
+        colorClass: 'bg-blue-500',
+        textClass: 'text-blue-400',
+        borderClass: 'border-blue-500/50',
+      };
+    } else {
+      return {
+        label: 'Info',
+        colorClass: 'bg-green-500',
+        textClass: 'text-green-400',
+        borderClass: 'border-green-500/50',
+      };
+    }
+  };
+  
+  // Get threat type label
+  const getTypeLabel = () => {
+    switch (threat.type) {
+      case 'attack':
+        return 'Cyber Attack';
+      case 'vulnerability':
+        return 'Vulnerability';
+      case 'prediction':
+        return 'Prediction';
+      case 'indicator':
+        return 'Indicator';
+      default:
+        return 'Threat';
+-e 
+
+
+-----------------------------------------
+FILE: components/dashboard/stats-grid.tsx
+-----------------------------------------
+'use client';
+
+// StatsGrid component
+// Displays key cybersecurity statistics in a grid layout with trend indicators
+
+import { useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+
+interface StatsGridProps {
+  kevStats: {
+    totalVulnerabilities: number;
+    addedLast30Days: number;
+    addedLast90Days: number;
+    remediationDueSoon: number;
+    byVendor?: Record<string, number>;
+  };
+  vulnerabilityCount: {
+    total: number;
+    critical: number;
+  };
+  attackStats: {
+    recentCount: number;
+    predictedCount: number;
+  };
+}
+
+const StatsGrid: React.FC<StatsGridProps> = ({ 
+  kevStats, 
+  vulnerabilityCount,
+  attackStats
+}) => {
+  // Animate counter effect
+  const counterRefs = useRef<Record<string, HTMLSpanElement | null>>({});
+  
+  // Animate number counting up
+  useEffect(() => {
+    const animateValue = (
+      element: HTMLSpanElement, 
+      start: number, 
+      end: number, 
+      duration: number
+    ) => {
+      let startTimestamp: number | null = null;
+      const step = (timestamp: number) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const value = Math.floor(progress * (end - start) + start);
+        element.textContent = value.toString();
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      };
+      window.requestAnimationFrame(step);
+    };
+    
+    // Animate each counter
+    Object.entries(counterRefs.current).forEach(([key, element]) => {
+      if (element) {
+        let value = 0;
+        
+        // Set the target value based on the key
+        switch (key) {
+          case 'kev-total':
+            value = kevStats.totalVulnerabilities;
+            break;
+          case 'kev-30days':
+            value = kevStats.addedLast30Days;
+            break;
+          case 'kev-90days':
+            value = kevStats.addedLast90Days;
+            break;
+          case 'kev-due':
+            value = kevStats.remediationDueSoon;
+            break;
+          case 'vuln-total':
+            value = vulnerabilityCount.total;
+            break;
+          case 'vuln-critical':
+            value = vulnerabilityCount.critical;
+            break;
+          case 'attacks-recent':
+            value = attackStats.recentCount;
+            break;
+          case 'attacks-predicted':
+            value = attackStats.predictedCount;
+            break;
+        }
+        
+        animateValue(element, 0, value, 1000);
+      }
+    });
+  }, [kevStats, vulnerabilityCount, attackStats]);
+  
+  // Helper function to determine trend indicator
+  const getTrendIndicator = (isPositive: boolean, isNeutral: boolean = false) => {
+    if (isNeutral) {
+      return (
+        <span className="text-gray-400">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
+-e 
+
+
+-----------------------------------------
+FILE: components/dashboard/prediction-card.tsx
+-----------------------------------------
+'use client';
+
+// PredictionCard component
+// Displays machine learning-based predictions for cyber threats
+
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface PredictionCardProps {
+  prediction: {
+    id: string;
+    targetType: string;
+    targetValue: string;
+    attackType?: string;
+    probability: number;
+    severity: number;
+    confidence: number;
+    generatedDate: number | string;
+    explanation: string;
+  };
+}
+
+const PredictionCard: React.FC<PredictionCardProps> = ({ prediction }) => {
+  const [expanded, setExpanded] = useState(false);
+  
+  // Format dates for display
+  const formatDate = (date: number | string) => {
+    const dateObj = typeof date === 'number' ? new Date(date) : new Date(date);
+    return dateObj.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+  
+  // Format the target type and value
+  const formatTarget = () => {
+    switch (prediction.targetType) {
+      case 'sector':
+        return `${prediction.targetValue} Sector`;
+      case 'region':
+        return `${prediction.targetValue} Region`;
+      case 'organization':
+        return prediction.targetValue;
+      default:
+        return `${prediction.targetValue} (${prediction.targetType})`;
+    }
+  };
+  
+  // Format the attack type
+  const formatAttackType = (type?: string) => {
+    if (!type) return 'Unknown Attack';
+    
+    const typeMap: Record<string, string> = {
+      'ransomware': 'Ransomware',
+      'dataBreach': 'Data Breach',
+      'ddos': 'DDoS Attack',
+      'zeroDay': 'Zero-Day Exploit',
+      'phishing': 'Phishing Campaign',
+      'supplyChain': 'Supply Chain Attack',
+      'insiderThreat': 'Insider Threat',
+    };
+    
+    return typeMap[type] || type;
+  };
+  
+  // Get severity class and label
+  const getSeverityInfo = () => {
+    const severityLevel = prediction.severity;
+    
+    if (severityLevel >= 8) {
+      return {
+        label: 'Critical',
+        colorClass: 'bg-red-500',
+        textClass: 'text-red-300',
+        borderClass: 'border-red-500',
+        glowClass: 'shadow-red-500/50',
+      };
+    } else if (severityLevel >= 6) {
+      return {
+        label: 'High',
+        colorClass: 'bg-orange-500',
+        textClass: 'text-orange-300',
+        borderClass: 'border-orange-500',
+        glowClass: 'shadow-orange-500/50',
+      };
+    } else if (severityLevel >= 4) {
+      return {
+        label: 'Medium',
+        colorClass: 'bg-yellow-500',
+        textClass: 'text-yellow-300',
+        borderClass: 'border-yellow-500',
+        glowClass: 'shadow-yellow-500/50',
+      };
+    } else if (severityLevel >= 2) {
+      return {
+        label: 'Low',
+        colorClass: 'bg-blue-500',
+        textClass: 'text-blue-300',
+        borderClass: 'border-blue-500',
+-e 
+
+
+-----------------------------------------
+FILE: components/dashboard/vulnerability-table.tsx
+-----------------------------------------
+'use client';
+
+// VulnerabilityTable component
+// Displays a list of critical vulnerabilities from NVD and CISA KEV
+
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface Vulnerability {
+  id: string;
+  title: string;
+  severity: string;
+  score: number;
+  published: string;
+  vector?: string;
+}
+
+interface VulnerabilityTableProps {
+  vulnerabilities: Vulnerability[];
+}
+
+const VulnerabilityTable: React.FC<VulnerabilityTableProps> = ({ vulnerabilities }) => {
+  const [expandedVuln, setExpandedVuln] = useState<string | null>(null);
+  
+  // Toggle expanded state for a vulnerability
+  const toggleExpand = (id: string) => {
+    if (expandedVuln === id) {
+      setExpandedVuln(null);
+    } else {
+      setExpandedVuln(id);
+    }
+  };
+  
+  // Get the CSS class based on severity
+  const getSeverityClass = (severity: string) => {
+    const severityLower = severity.toLowerCase();
+    
+    if (severityLower === 'critical') {
+      return 'bg-red-500 text-white';
+    } else if (severityLower === 'high') {
+      return 'bg-orange-500 text-white';
+    } else if (severityLower === 'medium') {
+      return 'bg-yellow-500 text-black';
+    } else if (severityLower === 'low') {
+      return 'bg-blue-500 text-white';
+    } else {
+      return 'bg-gray-500 text-white';
+    }
+  };
+  
+  // Format CVSS vector string into readable parts
+  const formatVectorString = (vector?: string) => {
+    if (!vector) return null;
+    
+    // Parse CVSS3 vector string
+    if (vector.startsWith('CVSS:3')) {
+      const parts = vector.replace('CVSS:3.1/', '').split('/');
+      return (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+          {parts.map((part, index) => {
+            const [key, value] = part.split(':');
+            return (
+              <div key={index} className="flex justify-between">
+                <span className="text-gray-400">{key}:</span>
+                <span className="text-gray-300">{value}</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    
+    return (
+      <div className="text-xs text-gray-300">
+        {vector}
+      </div>
+    );
+  };
+  
+  // Display a message if no vulnerabilities are provided
+  if (!vulnerabilities.length) {
+    return (
+      <div className="text-center py-6 text-gray-400">
+        No critical vulnerabilities found.
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-3">
+      {vulnerabilities.map((vuln) => (
+        <motion.div
+          key={vuln.id}
+          className="border border-gray-700 rounded-md overflow-hidden bg-gray-800/50 backdrop-blur-sm shadow-md"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div 
+            className="p-3 cursor-pointer hover:bg-gray-700/50 transition-colors"
+-e 
+
+
+-----------------------------------------
+FILE: components/dashboard/threat-meter.tsx
+-----------------------------------------
+'use client';
+
+// ThreatMeter component
+// A cyberpunk-styled gauge that displays the current threat level
+
+import { useEffect, useRef } from 'react';
+import * as d3 from 'd3';
+
+interface ThreatMeterProps {
+  level: number; // 0-100 threat level
+}
+
+const ThreatMeter: React.FC<ThreatMeterProps> = ({ level }) => {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const previousLevel = useRef<number>(0);
+  
+  // Format the threat level text
+  const threatLevelText = () => {
+    if (level >= 80) return 'CRITICAL';
+    if (level >= 60) return 'HIGH';
+    if (level >= 40) return 'ELEVATED';
+    if (level >= 20) return 'GUARDED';
+    return 'LOW';
+  };
+  
+  // Get the threat level color
+  const threatLevelColor = () => {
+    if (level >= 80) return '#FF0043';
+    if (level >= 60) return '#FF5E00';
+    if (level >= 40) return '#FFBD00';
+    if (level >= 20) return '#00BFFF';
+    return '#00FF66';
+  };
+  
+  // Calculate the arc path for the gauge
+  useEffect(() => {
+    if (!svgRef.current) return;
+    
+    const svg = d3.select(svgRef.current);
+    const width = 400;
+    const height = 200;
+    const radius = Math.min(width, height * 2) / 2;
+    
+    // Clear any existing content
+    svg.selectAll('*').remove();
+    
+    // Create the SVG structure
+    const g = svg.append('g')
+      .attr('transform', `translate(${width / 2}, ${height})`);
+    
+    // Create defs for gradients and filters
+    const defs = svg.append('defs');
+    
+    // Add glow filter
+    const filter = defs.append('filter')
+      .attr('id', 'glow')
+      .attr('x', '-50%')
+      .attr('y', '-50%')
+      .attr('width', '200%')
+      .attr('height', '200%');
+    
+    filter.append('feGaussianBlur')
+      .attr('stdDeviation', '3.5')
+      .attr('result', 'coloredBlur');
+    
+    const feMerge = filter.append('feMerge');
+    feMerge.append('feMergeNode').attr('in', 'coloredBlur');
+    feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+    
+    // Create gradient for gauge background
+    const backgroundGradient = defs.append('linearGradient')
+      .attr('id', 'backgroundGradient')
+      .attr('x1', '0%')
+      .attr('y1', '0%')
+      .attr('x2', '100%')
+      .attr('y2', '100%');
+    
+    backgroundGradient.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#2D3747')
+      .attr('stop-opacity', 1);
+    
+    backgroundGradient.append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', '#1A202C')
+      .attr('stop-opacity', 1);
+    
+    // Create gradient for gauge fill
+    const fillGradient = defs.append('linearGradient')
+      .attr('id', 'fillGradient')
+      .attr('x1', '0%')
+      .attr('y1', '0%')
+      .attr('x2', '100%')
+      .attr('y2', '0%');
+    
+    fillGradient.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#00FF66')
+      .attr('stop-opacity', 1);
+    
+-e 
+
+
+-----------------------------------------
+FILE: components/dashboard/attack-map.tsx
+-----------------------------------------
+'use client';
+
+// Interactive Attack Map using D3.js
+// This component visualizes cyber attacks on a world map
+
+import { useEffect, useRef, useState } from 'react';
+import * as d3 from 'd3';
+import { feature } from 'topojson-client';
+import { Topology, GeometryCollection } from 'topojson-specification';
+
+// Types
+interface Attack {
+  id: string;
+  attackDate: number; // Timestamp
+  attackType: string;
+  targetedSector: string;
+  targetedRegion: string;
+  impactLevel: number;
+}
+
+interface AttackNode {
+  id: string;
+  source: [number, number]; // [longitude, latitude]
+  target: [number, number]; // [longitude, latitude]
+  attackType: string;
+  impactLevel: number;
+  date: string;
+  sector: string;
+  region: string;
+}
+
+interface AttackMapProps {
+  attacks: Attack[];
+}
+
+// Country code to coordinates mapping (based on real country locations)
+const regionCoordinates: Record<string, [number, number]> = {
+  'North America': [-100.0, 45.0],
+  'United States': [-98.5795, 39.8283],
+  'Canada': [-106.3468, 56.1304],
+  'Mexico': [-102.5528, 23.6345],
+  'Europe': [15.2551, 54.5260],
+  'United Kingdom': [-3.4360, 55.3781],
+  'Germany': [10.4515, 51.1657],
+  'France': [2.2137, 46.2276],
+  'Italy': [12.5674, 41.8719],
+  'Spain': [-3.7492, 40.4637],
+  'Asia': [100.6197, 34.0479],
+  'China': [104.1954, 35.8617],
+  'Japan': [138.2529, 36.2048],
+  'India': [78.9629, 20.5937],
+  'Middle East': [53.4949, 29.3375],
+  'Africa': [20.2023, 6.3981],
+  'South America': [-58.9301, -14.7052],
+  'Brazil': [-51.9253, -14.2350],
+  'Australia': [133.7751, -25.2744],
+  'Global': [0, 0], // Center of the map
+};
+
+// Map attack types to colors
+const attackTypeColors: Record<string, string> = {
+  'ransomware': '#FF0059',
+  'dataBreach': '#00FFFF',
+  'ddos': '#FFD700',
+  'phishing': '#00FF59',
+  'malwareInfection': '#FF00FF',
+  'zeroDay': '#9C59FF',
+  'supplyChain': '#FF8000',
+  'insiderThreat': '#00B3FF',
+  'default': '#9C59FF'
+};
+
+const AttackMap: React.FC<AttackMapProps> = ({ attacks }) => {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [worldData, setWorldData] = useState<any>(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  
+  // Handle resize for responsive design (Lecture 5)
+  useEffect(() => {
+    const handleResize = () => {
+      if (svgRef.current) {
+        const { width } = svgRef.current.getBoundingClientRect();
+        setDimensions({ width, height: width * 0.5 });
+      }
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+  
+  // Fetch world map data
+  useEffect(() => {
+    const fetchGeoData = async () => {
+      try {
+        const response = await fetch('/data/world-110m.json');
+-e 
+
+

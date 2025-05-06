@@ -1,0 +1,1541 @@
+# CONTENTS OF lib/
+-----------------------------------------
+FILE: lib/auth/auth-options.ts
+-----------------------------------------
+import { NextAuthOptions } from 'next-auth';
+import { db } from '@/lib/db';
+import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import bcrypt from 'bcryptjs';
+import { ExtendedJWT, ExtendedSession, User, UserRole } from '@/types/auth';
+
+export const authOptions: NextAuthOptions = {
+  // Configure authentication providers
+  providers: [
+    // Credentials provider allows username/password login
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      
+      // Authorization logic
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+        
+        try {
+          // Find user by email
+          const userResults = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, credentials.email.toLowerCase()));
+          
+          const user = userResults[0];
+          
+          // If user not found, return null
+          if (!user) {
+            return null;
+          }
+          
+          // Check if we have a password hash - now using user.passwordHash
+          if (!user.passwordHash || typeof user.passwordHash !== 'string') {
+            console.error('Invalid password hash format:', typeof user.passwordHash);
+            return null;
+          }
+          
+          // Compare password with stored hash - now using user.passwordHash
+          const passwordMatch = await bcrypt.compare(
+            credentials.password.toString(),
+            user.passwordHash
+          );
+          
+          // If password doesn't match, return null
+          if (!passwordMatch) {
+            return null;
+          }
+          
+          // Return user object (without password)
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role as UserRole,
+          };
+        } catch (error) {
+          console.error('Authentication error:', error);
+          return null;
+        }
+      },
+    }),
+    
+    // Add more providers here as needed (Google, GitHub, etc.)
+  ],
+  
+  // Configure session handling
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
+  },
+  
+  // Pages configurations
+  pages: {
+    signIn: '/auth/login',
+    signOut: '/auth/logout',
+    error: '/auth/error',
+  },
+  
+  // Callbacks to extend default behavior
+  callbacks: {
+    // Modify the JWT token
+    jwt: async ({ token, user }) => {
+      const extendedToken = token as ExtendedJWT;
+      
+      // Add custom fields from user to token
+      if (user) {
+        extendedToken.id = user.id as string;
+        extendedToken.role = (user as User).role;
+      }
+      
+      return extendedToken;
+-e 
+
+
+-----------------------------------------
+FILE: lib/utils/fetcher.ts
+-----------------------------------------
+/**
+ * Utility functions for data fetching and API calls
+ */
+
+interface FetcherOptions {
+    method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+    headers?: Record<string, string>;
+    body?: any;
+    cache?: RequestCache;
+    next?: {
+      revalidate?: number | false;
+      tags?: string[];
+    };
+  }
+  
+  interface CustomRequestInit extends RequestInit {
+    next?: {
+      revalidate?: number | false;
+      tags?: string[];
+    };
+  }
+  
+  /**
+   * Fetches data from an API with error handling and request options
+   */
+  export async function fetcher<T = any>(
+    url: string,
+    options: FetcherOptions = {}
+  ): Promise<T> {
+    // Destructure options with defaults
+    const {
+      method = 'GET',
+      headers = {},
+      body,
+      cache = 'default',
+      next,
+    } = options;
+    
+    // Prepare headers with content type if not provided
+    const requestHeaders: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...headers,
+    };
+    
+    // Prepare request options
+    const requestOptions: CustomRequestInit = {
+      method,
+      headers: requestHeaders,
+      cache,
+      next,
+    };
+    
+    // Add body if provided
+    if (body !== undefined) {
+      requestOptions.body = typeof body === 'string' ? body : JSON.stringify(body);
+    }
+    
+    try {
+      // Make the request
+      const response = await fetch(url, requestOptions);
+      
+      // Handle unsuccessful responses
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new FetchError(
+          `API error: ${response.status} ${response.statusText}`,
+          response.status,
+          errorData
+        );
+      }
+      
+      // Parse JSON response
+      const data = await response.json();
+      return data as T;
+    } catch (error) {
+      // Re-throw FetchError
+      if (error instanceof FetchError) {
+        throw error;
+      }
+      
+      // Convert other errors to FetchError
+      throw new FetchError(
+        error instanceof Error ? error.message : 'Unknown error',
+        0
+      );
+    }
+  }
+  
+  /**
+   * Custom error class for fetch errors
+   */
+  export class FetchError extends Error {
+    status: number;
+    data?: any;
+    
+    constructor(message: string, status: number, data?: any) {
+      super(message);
+      this.name = 'FetchError';
+      this.status = status;
+      this.data = data;
+-e 
+
+
+-----------------------------------------
+FILE: lib/utils/viewport.ts
+-----------------------------------------
+/**
+ * Default viewport configuration for all pages
+ * Used to fix Next.js 14.2+ warnings about viewport and themeColor in metadata
+ */
+export const baseViewport = {
+    width: 'device-width',
+    initialScale: 1,
+    themeColor: '#000000',
+  };
+  
+  /**
+   * Function to extend the base viewport with additional properties
+   * @param additionalConfig Additional viewport config properties
+   * @returns Combined viewport configuration
+   */
+  export function extendViewport(additionalConfig = {}) {
+    return {
+      ...baseViewport,
+      ...additionalConfig
+    };
+  }-e 
+
+
+-----------------------------------------
+FILE: lib/utils/date-formatter.ts
+-----------------------------------------
+import {
+    format,
+    formatDistance,
+    formatRelative,
+    formatDistanceToNow,
+    isValid,
+    parseISO,
+  } from 'date-fns';
+  
+  /**
+   * Formats a date using date-fns
+   * 
+   * @param date - Date to format (Date object, ISO string, or timestamp)
+   * @param formatStr - Format string (default: 'MMM d, yyyy')
+   * @returns Formatted date string
+   */
+  export function formatDate(
+    date: Date | string | number,
+    formatStr = 'MMM d, yyyy'
+  ): string {
+    if (!date) return 'Invalid date';
+    
+    // Convert to Date object if not already
+    const dateObj = 
+      typeof date === 'string'
+        ? isValid(new Date(date))
+          ? new Date(date)
+          : parseISO(date)
+        : typeof date === 'number'
+        ? new Date(date)
+        : date;
+    
+    // Check if valid date
+    if (!isValid(dateObj)) return 'Invalid date';
+    
+    // Format date
+    return format(dateObj, formatStr);
+  }
+  
+  /**
+   * Formats a date relative to the current date
+   * 
+   * @param date - Date to format (Date object, ISO string, or timestamp)
+   * @param baseDate - Base date to compare to (default: now)
+   * @returns Formatted relative date string
+   */
+  export function formatRelativeDate(
+    date: Date | string | number,
+    baseDate?: Date
+  ): string {
+    if (!date) return 'Invalid date';
+    
+    // Convert to Date object if not already
+    const dateObj = 
+      typeof date === 'string'
+        ? isValid(new Date(date))
+          ? new Date(date)
+          : parseISO(date)
+        : typeof date === 'number'
+        ? new Date(date)
+        : date;
+    
+    // Check if valid date
+    if (!isValid(dateObj)) return 'Invalid date';
+    
+    // Format relative date
+    return formatRelative(dateObj, baseDate || new Date());
+  }
+  
+  /**
+   * Formats a date as a time ago string (e.g., "2 hours ago")
+   * 
+   * @param date - Date to format (Date object, ISO string, or timestamp)
+   * @param addSuffix - Whether to add a suffix (default: true)
+   * @returns Formatted time ago string
+   */
+  export function formatTimeAgo(
+    date: Date | string | number,
+    addSuffix = true
+  ): string {
+    if (!date) return 'Invalid date';
+    
+    // Convert to Date object if not already
+    const dateObj = 
+      typeof date === 'string'
+        ? isValid(new Date(date))
+          ? new Date(date)
+          : parseISO(date)
+        : typeof date === 'number'
+        ? new Date(date)
+        : date;
+    
+    // Check if valid date
+    if (!isValid(dateObj)) return 'Invalid date';
+    
+    // Format time ago
+    return formatDistanceToNow(dateObj, { addSuffix });
+  }
+  
+  /**
+-e 
+
+
+-----------------------------------------
+FILE: lib/utils/theme.ts
+-----------------------------------------
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+/**
+ * Combines and merges Tailwind CSS classes
+ */
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+-e 
+
+
+-----------------------------------------
+FILE: lib/ml/model-loader.ts
+-----------------------------------------
+/**
+ * Machine Learning Model Loader
+ * 
+ * This module handles loading and managing ML models for prediction.
+ * It supports both client-side (TensorFlow.js) and server-side models.
+ */
+
+import * as tf from '@tensorflow/tfjs';
+import { join } from 'path';
+import { db } from '@/lib/db';
+import { predictionModels } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { PredictionModel } from '@/types/threat-data';
+
+// Cache for loaded models to avoid reloading
+const modelCache = new Map<string, tf.LayersModel>();
+
+/**
+ * Load a model by ID from the database and model storage
+ */
+export async function loadModelById(modelId: string): Promise<tf.LayersModel> {
+  // First check the cache
+  if (modelCache.has(modelId)) {
+    return modelCache.get(modelId)!;
+  }
+  
+  // Get model metadata from database
+  const model = await db.query.predictionModels.findFirst({
+    where: eq(predictionModels.id, modelId),
+  });
+  
+  if (!model) {
+    throw new Error(`Model with ID ${modelId} not found in database`);
+  }
+  
+  // Check if model file path is defined
+  if (!model.filePath) {
+    throw new Error(`Model with ID ${modelId} has no file path defined`);
+  }
+  
+  // Update last used timestamp
+  await db.update(predictionModels)
+    .set({ lastUsed: new Date() })
+    .where(eq(predictionModels.id, modelId));
+  
+  // Determine path to model files
+  let modelPath: string;
+  
+  // Handle different environments
+  if (process.env.NODE_ENV === 'production') {
+    // In production, models are stored in a dedicated directory
+    modelPath = `file://${join(process.cwd(), 'public', model.filePath)}`;
+  } else {
+    // In development, models are stored in the public directory
+    modelPath = `file://${join(process.cwd(), 'public', model.filePath)}`;
+  }
+  
+  try {
+    // Load the model from storage
+    const loadedModel = await tf.loadLayersModel(modelPath);
+    
+    // Cache the model for future use
+    modelCache.set(modelId, loadedModel);
+    
+    return loadedModel;
+  } catch (error) {
+    console.error(`Error loading model ${modelId}:`, error);
+    throw new Error(`Failed to load model: ${error.message}`);
+  }
+}
+
+/**
+ * Get the most recent model of a specific type
+ */
+export async function getLatestModelByType(type: string): Promise<PredictionModel | null> {
+  const models = await db.select()
+    .from(predictionModels)
+    .where(eq(predictionModels.type, type))
+    .orderBy(predictionModels.trainingDate, 'desc')
+    .limit(1);
+  
+  return models.length > 0 ? models[0] : null;
+}
+
+/**
+ * Load the latest model of a specific type
+ */
+export async function loadLatestModelByType(type: string): Promise<tf.LayersModel> {
+  const model = await getLatestModelByType(type);
+  
+  if (!model) {
+    throw new Error(`No model of type ${type} found`);
+  }
+  
+  return loadModelById(model.id);
+}
+
+/**
+ * Clean up model cache to free memory
+ */
+-e 
+
+
+-----------------------------------------
+FILE: lib/ml/data-processing.ts
+-----------------------------------------
+/**
+ * Data processing utilities for ML models
+ * 
+ * This module handles the collection, preprocessing, and feature extraction
+ * from various cybersecurity data sources.
+ */
+
+import * as tf from '@tensorflow/tfjs';
+import { fetchCisaKevCatalog, CisaKevVulnerability } from '../api/cisa';
+import { fetchVulnerabilities, NvdVulnerability } from '../api/nvd';
+import { db } from '../db';
+import { cyberAttacks, vulnerabilities, threatActors } from '../db/schema';
+import { eq, lt, gt, and, desc } from 'drizzle-orm';
+
+/**
+ * Normalized vulnerability data structure for ML processing
+ */
+export interface NormalizedVulnerability {
+  cveId: string;
+  publishedDate: Date;
+  cvssScore: number;
+  exploitedInWild: boolean;
+  attackVector: string;
+  attackComplexity: string;
+  privilegesRequired: string;
+  userInteraction: string;
+  impactScore: number;
+  baseScore: number;
+  vendorName: string;
+  productName: string;
+  affectedSystemsCount: number;
+  daysToRemediate?: number;
+}
+
+/**
+ * Normalized cyber attack data structure for ML processing
+ */
+export interface NormalizedAttack {
+  id: string;
+  attackDate: Date;
+  attackType: string;
+  targetedSector: string;
+  targetedRegion: string;
+  impactLevel: number;
+  nationState?: string;
+  vulnerabilitiesExploited: string[];
+}
+
+/**
+ * Prepare training data for attack prediction models
+ */
+export async function prepareTrainingData() {
+  // Get historical attack data
+  const attacks = await db.select().from(cyberAttacks).orderBy(desc(cyberAttacks.attackDate));
+  
+  // Get vulnerability data
+  const vulns = await db.select().from(vulnerabilities);
+  
+  // Get threat actor data
+  const actors = await db.select().from(threatActors);
+  
+  // Create a lookup map for vulnerabilities by CVE ID
+  const vulnMap = new Map();
+  vulns.forEach(vuln => {
+    vulnMap.set(vuln.id, vuln);
+  });
+  
+  // Create a lookup map for threat actors by ID
+  const actorMap = new Map();
+  actors.forEach(actor => {
+    actorMap.set(actor.id, actor);
+  });
+  
+  // Process attack data
+  const processedAttacks = attacks.map(attack => {
+    const threatActor = attack.threatActorId ? actorMap.get(attack.threatActorId) : null;
+    
+    // Parse the vulnerabilitiesExploited JSON string
+    let exploitedVulns: string[] = [];
+    try {
+      exploitedVulns = attack.vulnerabilitiesExploited 
+        ? JSON.parse(attack.vulnerabilitiesExploited) 
+        : [];
+    } catch (e) {
+      console.error('Error parsing vulnerabilitiesExploited:', e);
+    }
+    
+    // Map used vulnerabilities to their details
+    const vulnDetails = exploitedVulns
+      .map(cveId => vulnMap.get(cveId))
+      .filter(Boolean);
+    
+    // Calculate average severity of exploited vulnerabilities
+    const avgSeverity = vulnDetails.length 
+      ? vulnDetails.reduce((sum, v) => sum + v.severity, 0) / vulnDetails.length 
+      : 0;
+    
+    // Create feature record
+    return {
+      id: attack.id,
+-e 
+
+
+-----------------------------------------
+FILE: lib/ml/prediction.ts
+-----------------------------------------
+/**
+ * Cybersecurity threat prediction model
+ * 
+ * This module provides ML-based predictions for future cyber attacks
+ * using TensorFlow.js.
+ */
+
+import * as tf from '@tensorflow/tfjs';
+import { fetchAndNormalizeVulnerabilities, extractFeatures, prepareTrainingData } from './data-processing';
+import { db } from '../db';
+import { predictionModels, predictions } from '../db/schema';
+import { eq } from 'drizzle-orm';
+import { createId } from '@paralleldrive/cuid2';
+
+// Attack types that we can predict
+export const ATTACK_TYPES = [
+  'ransomware',
+  'dataBreach',
+  'ddos',
+  'zeroDay',
+  'phishing',
+  'supplyChain',
+  'insiderThreat',
+];
+
+// Target types for predictions
+export const TARGET_TYPES = [
+  'sector',
+  'region',
+  'organization',
+];
+
+/**
+ * Create and train a new cyber attack prediction model
+ */
+export async function trainAttackPredictionModel(): Promise<{
+  modelId: string;
+  accuracy: number;
+  precision: number;
+  recall: number;
+  f1Score: number;
+}> {
+  // Prepare training data
+  const trainingData = await prepareTrainingData();
+  
+  // Extract features and labels for training
+  const { features, labels, featureNames } = extractFeatures(trainingData);
+  
+  // Split into training and validation sets (80/20 split)
+  const numExamples = features.shape[0];
+  const numTrainExamples = Math.floor(0.8 * numExamples);
+  
+  const trainFeatures = features.slice([0, 0], [numTrainExamples, features.shape[1]]);
+  const trainLabels = labels.slice([0, 0], [numTrainExamples, labels.shape[1]]);
+  
+  const valFeatures = features.slice([numTrainExamples, 0], [numExamples - numTrainExamples, features.shape[1]]);
+  const valLabels = labels.slice([numTrainExamples, 0], [numExamples - numTrainExamples, labels.shape[1]]);
+  
+  // Create a sequential model
+  const model = tf.sequential();
+  
+  // Input layer
+  model.add(tf.layers.dense({
+    inputShape: [features.shape[1]],
+    units: 64,
+    activation: 'relu',
+    kernelInitializer: 'heNormal',
+  }));
+  
+  // Dropout for regularization
+  model.add(tf.layers.dropout({ rate: 0.3 }));
+  
+  // Hidden layer
+  model.add(tf.layers.dense({
+    units: 32,
+    activation: 'relu',
+    kernelInitializer: 'heNormal',
+  }));
+  
+  // Dropout for regularization
+  model.add(tf.layers.dropout({ rate: 0.2 }));
+  
+  // Output layer for multi-class classification
+  model.add(tf.layers.dense({
+    units: labels.shape[1],
+    activation: 'softmax',
+  }));
+  
+  // Compile the model
+  model.compile({
+    optimizer: tf.train.adam(0.001),
+    loss: 'categoricalCrossentropy',
+    metrics: ['accuracy'],
+  });
+  
+  // Train the model
+  const history = await model.fit(trainFeatures, trainLabels, {
+    epochs: 50,
+    batchSize: 32,
+    validationData: [valFeatures, valLabels],
+-e 
+
+
+-----------------------------------------
+FILE: lib/ml/feature-extraction.ts
+-----------------------------------------
+/**
+ * Feature Extraction Module
+ * 
+ * This module handles extracting and processing features from raw data
+ * for use in machine learning models.
+ */
+
+import * as tf from '@tensorflow/tfjs';
+import { 
+  NormalizedVulnerability, 
+  CyberAttack, 
+  ThreatActor,
+  Indicator
+} from '@/types/threat-data';
+
+/**
+ * Feature extraction configuration
+ */
+export interface FeatureExtractionConfig {
+  includeSectors?: boolean;
+  includeRegions?: boolean;
+  includeAttackTypes?: boolean;
+  includeThreatActors?: boolean;
+  includeVulnerabilities?: boolean;
+  includeTimeSeries?: boolean;
+  timeSeriesLength?: number;
+}
+
+/**
+ * Default feature extraction configuration
+ */
+const DEFAULT_CONFIG: FeatureExtractionConfig = {
+  includeSectors: true,
+  includeRegions: true,
+  includeAttackTypes: true,
+  includeThreatActors: true,
+  includeVulnerabilities: true,
+  includeTimeSeries: false,
+  timeSeriesLength: 10,
+};
+
+/**
+ * Sector categories for one-hot encoding
+ */
+export const SECTOR_CATEGORIES = [
+  'financial',
+  'healthcare',
+  'government',
+  'education',
+  'technology',
+  'manufacturing',
+  'energy',
+  'retail',
+  'transportation',
+  'telecommunications',
+  'media',
+  'other',
+];
+
+/**
+ * Region categories for one-hot encoding
+ */
+export const REGION_CATEGORIES = [
+  'north_america',
+  'south_america',
+  'europe',
+  'asia',
+  'africa',
+  'oceania',
+  'middle_east',
+];
+
+/**
+ * Attack type categories for one-hot encoding
+ */
+export const ATTACK_TYPE_CATEGORIES = [
+  'ransomware',
+  'data_breach',
+  'ddos',
+  'phishing',
+  'zero_day',
+  'supply_chain',
+  'malware',
+  'insider_threat',
+  'social_engineering',
+  'other',
+];
+
+/**
+ * Extract features from attack data
+ */
+export function extractFeaturesFromAttacks(
+  attacks: CyberAttack[],
+  config: FeatureExtractionConfig = DEFAULT_CONFIG
+): { features: tf.Tensor2D; featureNames: string[] } {
+  const featureVectors: number[][] = [];
+  const featureNames: string[] = [];
+  
+  // Process each attack
+  for (const attack of attacks) {
+-e 
+
+
+-----------------------------------------
+FILE: lib/db/schema.ts
+-----------------------------------------
+// schema.ts
+// Database schema using Drizzle ORM for PostgreSQL
+import { pgTable, text, timestamp, varchar, integer, real, boolean } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
+import { createId } from '@paralleldrive/cuid2';
+
+// Users table
+export const users = pgTable('users', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
+  name: text('name').notNull(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  role: text('role', { enum: ['user', 'analyst', 'admin'] }).default('user').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// User relations
+export const usersRelations = relations(users, ({ many }) => ({
+  dashboards: many(dashboards),
+  alerts: many(alerts),
+}));
+
+// User dashboard configurations
+export const dashboards = pgTable('dashboards', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  layout: text('layout').notNull(), // JSON string of dashboard layout
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// Dashboard relations
+export const dashboardsRelations = relations(dashboards, ({ one }) => ({
+  user: one(users, {
+    fields: [dashboards.userId],
+    references: [users.id],
+  }),
+}));
+
+// Vulnerabilities - data from NVD and CISA KEV
+export const vulnerabilities = pgTable('vulnerabilities', {
+  id: text('id').primaryKey(), // CVE ID e.g., CVE-2023-12345
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  severity: real('severity').notNull(), // CVSS score
+  exploitedInWild: boolean('exploited_in_wild').notNull().default(false),
+  publishedDate: timestamp('published_date').notNull(),
+  lastModified: timestamp('last_modified').notNull(),
+  cisaKevDate: timestamp('cisa_kev_date'), // Date added to CISA KEV catalog (if applicable)
+  remediationDate: timestamp('remediation_date'), // CISA required remediation date (if applicable)
+  affectedSystems: text('affected_systems').notNull(), // JSON string of affected systems/software
+  attackVector: text('attack_vector'), // MITRE ATT&CK vector if available
+  references: text('references').notNull(), // JSON string of reference URLs
+  sourceData: text('source_data').notNull(), // Complete JSON data from source
+});
+
+// Threat actors - known APT groups and threat actors
+export const threatActors = pgTable('threat_actors', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
+  name: text('name').notNull(),
+  aliases: text('aliases'), // JSON string of aliases
+  description: text('description').notNull(),
+  nationState: text('nation_state'), // Country associated with the threat actor, if known
+  motivations: text('motivations'), // JSON string of motivations (financial, political, etc.)
+  sophisticationLevel: text('sophistication_level'), // Level of sophistication
+  firstSeen: timestamp('first_seen'),
+  lastSeen: timestamp('last_seen'),
+  associatedGroups: text('associated_groups'), // JSON string of associated groups
+  targetedSectors: text('targeted_sectors'), // JSON string of targeted sectors
+  targetedRegions: text('targeted_regions'), // JSON string of targeted regions/countries
+  techniques: text('techniques'), // JSON string of MITRE ATT&CK techniques
+  sourceData: text('source_data'), // JSON string of source data
+});
+
+// Recorded cyber attacks - historical attack data
+export const cyberAttacks = pgTable('cyber_attacks', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  attackDate: timestamp('attack_date').notNull(),
+  discoveredDate: timestamp('discovered_date').notNull(),
+  attackType: text('attack_type').notNull(),
+  threatActorId: text('threat_actor_id').references(() => threatActors.id),
+  vulnerabilitiesExploited: text('vulnerabilities_exploited'), // JSON string of CVE IDs
+  targetedSector: text('targeted_sector').notNull(),
+  targetedRegion: text('targeted_region').notNull(),
+  impactLevel: real('impact_level').notNull(), // Numerical score of impact
+  techniquesUsed: text('techniques_used'), // JSON string of techniques
+  indicators: text('indicators'), // JSON string of IoCs (Indicators of Compromise)
+  source: text('source').notNull(), // Source of the attack data
+  sourceUrl: text('source_url'), // URL to the source
+  sourceData: text('source_data'), // Complete JSON data from source
+});
+
+// Cyber attack relations
+export const cyberAttacksRelations = relations(cyberAttacks, ({ one }) => ({
+  threatActor: one(threatActors, {
+    fields: [cyberAttacks.threatActorId],
+-e 
+
+
+-----------------------------------------
+FILE: lib/db/migrations/0000_initial.sql
+-----------------------------------------
+-- USERS
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'analyst', 'admin')),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- DASHBOARDS
+CREATE TABLE IF NOT EXISTS dashboards (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  layout TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- VULNERABILITIES
+CREATE TABLE IF NOT EXISTS vulnerabilities (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  severity REAL NOT NULL,
+  exploited_in_wild INTEGER NOT NULL DEFAULT 0,
+  published_date TIMESTAMP NOT NULL,
+  last_modified TIMESTAMP NOT NULL,
+  cisa_kev_date TIMESTAMP,
+  remediation_date TIMESTAMP,
+  affected_systems TEXT NOT NULL,
+  attack_vector TEXT,
+  references TEXT NOT NULL,
+  source_data TEXT NOT NULL
+);
+
+-- THREAT ACTORS
+CREATE TABLE IF NOT EXISTS threat_actors (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  aliases TEXT,
+  description TEXT NOT NULL,
+  nation_state TEXT,
+  motivations TEXT,
+  sophistication_level TEXT,
+  first_seen TIMESTAMP,
+  last_seen TIMESTAMP,
+  associated_groups TEXT,
+  targeted_sectors TEXT,
+  targeted_regions TEXT,
+  techniques TEXT,
+  source_data TEXT
+);
+
+-- CYBER ATTACKS
+CREATE TABLE IF NOT EXISTS cyber_attacks (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  attack_date TIMESTAMP NOT NULL,
+  discovered_date TIMESTAMP NOT NULL,
+  attack_type TEXT NOT NULL,
+  threat_actor_id TEXT REFERENCES threat_actors(id),
+  vulnerabilities_exploited TEXT,
+  targeted_sector TEXT NOT NULL,
+  targeted_region TEXT NOT NULL,
+  impact_level REAL NOT NULL,
+  techniques_used TEXT,
+  indicators TEXT,
+  source TEXT NOT NULL,
+  source_url TEXT,
+  source_data TEXT
+);
+
+-- PREDICTION MODELS
+CREATE TABLE IF NOT EXISTS prediction_models (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  type TEXT NOT NULL,
+  algorithm TEXT NOT NULL,
+  version TEXT NOT NULL,
+  parameters TEXT NOT NULL,
+  accuracy REAL,
+  precision REAL,
+  recall REAL,
+  f1_score REAL,
+  training_date TIMESTAMP NOT NULL,
+  last_used TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  file_path TEXT
+);
+
+-- PREDICTIONS
+CREATE TABLE IF NOT EXISTS predictions (
+  id TEXT PRIMARY KEY,
+  model_id TEXT NOT NULL REFERENCES prediction_models(id),
+  generated_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  predicted_timeframe TEXT NOT NULL,
+-e 
+
+
+-----------------------------------------
+FILE: lib/db/index.ts
+-----------------------------------------
+// lib/db/index.ts
+import { drizzle } from 'drizzle-orm/vercel-postgres';
+import { sql } from '@vercel/postgres';
+import * as schema from './schema';
+
+// Create the Drizzle ORM instance with Vercel Postgres
+const db = drizzle(sql, { schema });
+
+// Export both the database instance and schema
+export { db, schema };-e 
+
+
+-----------------------------------------
+FILE: lib/api/nvd.ts
+-----------------------------------------
+/**
+ * NVD API Client
+ * 
+ * This client interacts with the National Vulnerability Database (NVD) 2.0 API
+ * to fetch vulnerability data.
+ * 
+ * API Documentation: https://nvd.nist.gov/developers/vulnerabilities
+ */
+
+// Types for NVD API responses
+export interface NvdApiResponse<T> {
+    resultsPerPage: number;
+    startIndex: number;
+    totalResults: number;
+    format: string;
+    version: string;
+    timestamp: string;
+    vulnerabilities: T[];
+  }
+  
+  export interface NvdVulnerability {
+    cve: {
+      id: string;
+      sourceIdentifier: string;
+      published: string;
+      lastModified: string;
+      vulnStatus: string;
+      descriptions: {
+        lang: string;
+        value: string;
+      }[];
+      metrics: {
+        cvssMetricV31?: {
+          cvssData: {
+            version: string;
+            vectorString: string;
+            attackVector: string;
+            attackComplexity: string;
+            privilegesRequired: string;
+            userInteraction: string;
+            scope: string;
+            confidentialityImpact: string;
+            integrityImpact: string;
+            availabilityImpact: string;
+            baseScore: number;
+            baseSeverity: string;
+          };
+          exploitabilityScore: number;
+          impactScore: number;
+        }[];
+        cvssMetricV2?: {
+          cvssData: {
+            version: string;
+            vectorString: string;
+            accessVector: string;
+            accessComplexity: string;
+            authentication: string;
+            confidentialityImpact: string;
+            integrityImpact: string;
+            availabilityImpact: string;
+            baseScore: number;
+          };
+          baseSeverity: string;
+          exploitabilityScore: number;
+          impactScore: number;
+          acInsufInfo: boolean;
+          obtainAllPrivilege: boolean;
+          obtainUserPrivilege: boolean;
+          obtainOtherPrivilege: boolean;
+          userInteractionRequired: boolean;
+        }[];
+      };
+      weaknesses?: {
+        source: string;
+        type: string;
+        description: {
+          lang: string;
+          value: string;
+        }[];
+      }[];
+      configurations?: {
+        nodes: {
+          operator: string;
+          negate: boolean;
+          cpeMatch: {
+            vulnerable: boolean;
+            criteria: string;
+            matchCriteriaId: string;
+            versionEndExcluding?: string;
+            versionEndIncluding?: string;
+            versionStartExcluding?: string;
+            versionStartIncluding?: string;
+          }[];
+        }[];
+      }[];
+      references: {
+        url: string;
+        source: string;
+        tags: string[];
+      }[];
+-e 
+
+
+-----------------------------------------
+FILE: lib/api/urlhaus.ts
+-----------------------------------------
+declare const Buffer: {
+  from(data: string): { toString(encoding: string): string };
+};
+
+/**
+ * URLhaus API Client
+ * 
+ * This module provides functions to interact with the URLhaus API for
+ * retrieving information about malicious URLs.
+ * 
+ * API Documentation: https://urlhaus.abuse.ch/api/
+ */
+
+// API base URL
+const URLHAUS_API_URL = 'https://urlhaus-api.abuse.ch/v1';
+
+/**
+ * Make a request to the URLhaus API
+ */
+async function urlhausApiRequest(endpoint: string, data?: any) {
+  const options: RequestInit = {
+    method: data ? 'POST' : 'GET',
+    headers: {
+      'Accept': 'application/json',
+    },
+  };
+  
+  // Add request body if provided
+  if (data) {
+    options.headers = {
+      ...options.headers,
+      'Content-Type': 'application/json',
+    };
+    options.body = JSON.stringify(data);
+  }
+  
+  // Make the request
+  const response = await fetch(`${URLHAUS_API_URL}${endpoint}`, options);
+  
+  // Handle errors
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`URLhaus API error (${response.status}): ${errorText}`);
+  }
+  
+  // Parse and return the response
+  return await response.json();
+}
+
+/**
+ * Query URL information
+ */
+export async function queryUrl(url: string) {
+  return urlhausApiRequest('/url/', { url });
+}
+
+/**
+ * Query payload (file hash) information
+ */
+export async function queryPayload(hash: string) {
+  return urlhausApiRequest('/payload/', { hash });
+}
+
+/**
+ * Query host information (IP address or domain)
+ */
+export async function queryHost(host: string) {
+  return urlhausApiRequest('/host/', { host });
+}
+
+/**
+ * Search for tags
+ */
+export async function queryTag(tag: string) {
+  return urlhausApiRequest('/tag/', { tag });
+}
+
+/**
+ * Get recent submissions
+ */
+export async function getRecentSubmissions() {
+  return urlhausApiRequest('/submissions/');
+}
+
+/**
+ * Convert URLhaus URL result to normalized format
+ */
+export function normalizeUrlResult(result: any) {
+  // Skip if query was not successful
+  if (result.query_status !== 'ok') {
+    return null;
+  }
+  
+  return {
+    id: result.id || `urlhaus-${Buffer.from(result.url).toString('base64')}`,
+    type: 'url',
+    url: result.url,
+    status: result.url_status,
+    dateAdded: result.date_added,
+    threatType: result.threat || 'unknown',
+-e 
+
+
+-----------------------------------------
+FILE: lib/api/phishtank.ts
+-----------------------------------------
+/**
+ * PhishTank API Client
+ * 
+ * Client for interacting with the PhishTank API to check and retrieve phishing URLs.
+ * PhishTank is a community-driven service for reporting and verifying phishing websites.
+ * 
+ * API Documentation: https://phishtank.org/api_info.php
+ */
+
+import { db } from '@/lib/db';
+import { indicators } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+
+// PhishTank API URLs
+const PHISHTANK_BASE_URL = 'https://checkurl.phishtank.com/checkurl/';
+const PHISHTANK_ONLINE_URL = 'https://phishtank.org/phish_detail.php?phish_id=';
+
+// API key configuration
+const PHISHTANK_API_KEY = process.env.PHISHTANK_API_KEY;
+
+// Interface for PhishTank API response
+interface PhishTankCheckResponse {
+  meta: {
+    status: string;
+    url: string;
+    requestId?: string;
+    errorMessage?: string;
+  };
+  results: {
+    url: string;
+    inDatabase: boolean;
+    verified: boolean;
+    verifiedAt?: string;
+    phishId?: string;
+    phishDetailPage?: string;
+    details?: any[];
+  };
+}
+
+/**
+ * Check if a URL is a known phishing site according to PhishTank
+ * 
+ * @param url URL to check
+ * @returns PhishTank check result
+ */
+export async function checkUrl(url: string): Promise<PhishTankCheckResponse> {
+  if (!url) {
+    throw new Error('URL is required');
+  }
+  
+  try {
+    // Format request for PhishTank API
+    const formData = new FormData();
+    formData.append('url', url);
+    formData.append('format', 'json');
+    
+    if (PHISHTANK_API_KEY) {
+      formData.append('app_key', PHISHTANK_API_KEY);
+    }
+    
+    // Send request to PhishTank API
+    const response = await fetch(PHISHTANK_BASE_URL, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`PhishTank API error: ${response.status} ${response.statusText}`);
+    }
+    
+    // Parse response
+    const data: PhishTankCheckResponse = await response.json();
+    
+    // Store result in database if it's a phishing URL
+    if (data.results.inDatabase && data.results.verified) {
+      storePhishingIndicator(url, data);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error checking URL with PhishTank:', error);
+    throw error;
+  }
+}
+
+/**
+ * Batch check multiple URLs against PhishTank
+ * Note: This will make multiple API calls, so use responsibly
+ * 
+ * @param urls List of URLs to check
+ * @returns Map of URLs to their PhishTank check results
+ */
+export async function batchCheckUrls(urls: string[]): Promise<Map<string, PhishTankCheckResponse>> {
+  const results = new Map<string, PhishTankCheckResponse>();
+  
+  // PhishTank doesn't have a batch API, so we need to make individual requests
+  // Add a slight delay between requests to avoid overloading their API
+  for (const url of urls) {
+    try {
+      const result = await checkUrl(url);
+-e 
+
+
+-----------------------------------------
+FILE: lib/api/virustotal.ts
+-----------------------------------------
+/**
+ * VirusTotal API Client
+ * 
+ * This module provides functions to interact with the VirusTotal API for
+ * retrieving malware analysis data.
+ * 
+ * API Documentation: https://developers.virustotal.com/reference/overview
+ */
+
+declare const Buffer: {
+  from(data: string): { toString(encoding: string): string };
+};
+
+// API base URL and configuration
+const VT_API_BASE_URL = 'https://www.virustotal.com/api/v3';
+const VT_API_KEY = (process.env as any)['VIRUSTOTAL_API_KEY'];
+
+// Check if API key is configured
+if (!VT_API_KEY) {
+  console.warn('VirusTotal API key not configured. API calls will not work.');
+}
+
+/**
+ * Make an authenticated request to the VirusTotal API
+ */
+async function vtApiRequest(endpoint: string, options: RequestInit = {}) {
+  // Ensure API key is available
+  if (!VT_API_KEY) {
+    throw new Error('VirusTotal API key not configured');
+  }
+  
+  // Set up default headers
+  const headers = {
+    'x-apikey': VT_API_KEY,
+    'Accept': 'application/json',
+    ...options.headers,
+  };
+  
+  // Make the request
+  const response = await fetch(`${VT_API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+  
+  // Handle errors
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`VirusTotal API error (${response.status}): ${errorText}`);
+  }
+  
+  // Parse and return the response
+  return await response.json();
+}
+
+/**
+ * Get file report by hash (MD5, SHA-1, or SHA-256)
+ */
+export async function getFileReport(hash: string) {
+  return vtApiRequest(`/files/${hash}`);
+}
+
+/**
+ * Get URL report
+ */
+export async function getUrlReport(url: string) {
+  // URL needs to be URL-encoded and base64-encoded
+  const encodedUrl = Buffer.from(encodeURIComponent(url)).toString('base64');
+  return vtApiRequest(`/urls/${encodedUrl}`);
+}
+
+/**
+ * Get domain report
+ */
+export async function getDomainReport(domain: string) {
+  return vtApiRequest(`/domains/${domain}`);
+}
+
+/**
+ * Get IP address report
+ */
+export async function getIpReport(ip: string) {
+  return vtApiRequest(`/ip_addresses/${ip}`);
+}
+
+/**
+ * Submit a URL for scanning
+ */
+export async function scanUrl(url: string) {
+  return vtApiRequest('/urls', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `url=${encodeURIComponent(url)}`,
+  });
+}
+
+/**
+ * Convert VirusTotal file report to normalized format
+ */
+-e 
+
+
+-----------------------------------------
+FILE: lib/api/cisa.ts
+-----------------------------------------
+/**
+ * CISA Known Exploited Vulnerabilities (KEV) Catalog API Client
+ * 
+ * This client fetches data from the CISA KEV Catalog, which is an authoritative source
+ * of vulnerabilities that have been exploited in the wild.
+ * 
+ * Data source: https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+ */
+
+// Types for CISA KEV data
+export interface CisaKevVulnerability {
+    cveID: string;
+    vendorProject: string;
+    product: string;
+    vulnerabilityName: string;
+    dateAdded: string;
+    shortDescription: string;
+    requiredAction: string;
+    dueDate: string;
+    notes: string;
+  }
+  
+  export interface CisaKevCatalog {
+    title: string;
+    catalogVersion: string;
+    dateReleased: string;
+    count: number;
+    vulnerabilities: CisaKevVulnerability[];
+  }
+  
+  // CISA KEV Catalog JSON URL
+  const CISA_KEV_URL = 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json';
+  
+  /**
+   * Fetch the complete CISA KEV catalog
+   */
+  export async function fetchCisaKevCatalog(): Promise<CisaKevCatalog> {
+    try {
+      const response = await fetch(CISA_KEV_URL);
+      
+      if (!response.ok) {
+        throw new Error(`CISA KEV API error: ${response.status} ${response.statusText}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching CISA KEV catalog:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Fetch recent vulnerabilities from the CISA KEV catalog
+   * 
+   * Gets vulnerabilities added in the last X days
+   */
+  export async function fetchRecentKevVulnerabilities(days = 30): Promise<CisaKevVulnerability[]> {
+    const catalog = await fetchCisaKevCatalog();
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    return catalog.vulnerabilities.filter(vuln => {
+      const addedDate = new Date(vuln.dateAdded);
+      return addedDate >= cutoffDate;
+    });
+  }
+  
+  /**
+   * Check if a vulnerability is in the CISA KEV catalog
+   */
+  export async function isVulnerabilityInKevCatalog(cveId: string): Promise<boolean> {
+    const catalog = await fetchCisaKevCatalog();
+    return catalog.vulnerabilities.some(vuln => vuln.cveID === cveId);
+  }
+  
+  /**
+   * Get details for a specific vulnerability in the CISA KEV catalog by CVE ID
+   */
+  export async function getKevVulnerabilityDetails(cveId: string): Promise<CisaKevVulnerability | null> {
+    const catalog = await fetchCisaKevCatalog();
+    const vulnerability = catalog.vulnerabilities.find(vuln => vuln.cveID === cveId);
+    
+    return vulnerability || null;
+  }
+  
+  /**
+   * Get KEV vulnerabilities by vendor/project
+   */
+  export async function getKevVulnerabilitiesByVendor(vendor: string): Promise<CisaKevVulnerability[]> {
+    const catalog = await fetchCisaKevCatalog();
+    const normalizedVendor = vendor.toLowerCase();
+    
+    return catalog.vulnerabilities.filter(vuln => 
+      vuln.vendorProject.toLowerCase().includes(normalizedVendor)
+    );
+  }
+  
+  /**
+   * Get KEV vulnerabilities that are due for remediation soon
+   * 
+-e 
+
+

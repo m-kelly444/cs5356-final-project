@@ -1,0 +1,2006 @@
+# CONTENTS OF app/
+-----------------------------------------
+FILE: app/auth/register/page.tsx
+-----------------------------------------
+import { Metadata } from 'next';
+import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth/auth-options';
+import RegisterForm from '@/components/auth/register-form';
+
+export const metadata: Metadata = {
+  title: 'Register | CyberPulse',
+  description: 'Create a new CyberPulse account',
+};
+
+export default async function RegisterPage() {
+  // Check if user is already authenticated
+  const session = await getServerSession(authOptions);
+  
+  // If already authenticated, redirect to dashboard
+  if (session) {
+    redirect('/dashboard');
+  }
+  
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-background">
+      <div className="w-full max-w-md space-y-8">
+        {/* Header */}
+        <div className="text-center">
+          <h1 className="text-4xl font-bold tracking-tight neon-text mb-6">
+            CyberPulse
+          </h1>
+          <h2 className="text-2xl font-bold mb-2">
+            Create an account
+          </h2>
+          <p className="text-gray-400">
+            Join our cybersecurity intelligence platform
+          </p>
+        </div>
+        
+        {/* Registration form */}
+        <div className="cyber-card p-6">
+          <RegisterForm />
+        </div>
+        
+        {/* Login link */}
+        <div className="text-center">
+          <p className="text-sm text-gray-400">
+            Already have an account?{' '}
+            <Link href="/auth/login" className="text-cyan-400 hover:text-cyan-300">
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+      
+      {/* Cyberpunk background effects */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black opacity-80" />
+        
+        {/* Grid lines */}
+        <div className="absolute inset-0 cyber-grid opacity-20" />
+        
+        {/* Animated cyberpunk lines */}
+        <svg width="100%" height="100%" className="absolute inset-0 opacity-20">
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          
+          {/* Horizontal lines */}
+          {Array.from({ length: 5 }).map((_, i) => (
+            <line 
+              key={`h-${i}`}
+              x1="0" 
+              y1={`${(i + 1) * 20}%`} 
+              x2="100%" 
+              y2={`${(i + 1) * 20}%`}
+              stroke="fuchsia" 
+              strokeWidth="1" 
+              strokeDasharray="10,30,60" 
+              strokeDashoffset={i * 37}
+              filter="url(#glow)"
+            >
+              <animate 
+                attributeName="stroke-dashoffset" 
+                values={`${i * 100};${i * -100}`} 
+                dur={`${20 + i * 5}s`} 
+                repeatCount="indefinite" 
+              />
+            </line>
+          ))}
+          
+          {/* Vertical lines */}
+          {Array.from({ length: 5 }).map((_, i) => (
+            <line 
+              key={`v-${i}`}
+              x1={`${(i + 1) * 20}%`} 
+-e 
+
+
+-----------------------------------------
+FILE: app/auth/login/page.tsx
+-----------------------------------------
+import { Metadata } from 'next';
+import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth/auth-options';
+import LoginForm from '@/components/auth/login-form';
+
+export const metadata: Metadata = {
+  title: 'Login | CyberPulse',
+  description: 'Sign in to your CyberPulse account',
+};
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: { callbackUrl?: string; error?: string };
+}) {
+  // Check if user is already authenticated
+  const session = await getServerSession(authOptions);
+  
+  // If already authenticated, redirect to dashboard
+  if (session) {
+    redirect('/dashboard');
+  }
+  
+  // Get callback URL from search params or default to dashboard
+  const callbackUrl = searchParams.callbackUrl || '/dashboard';
+  
+  // Get error message if any
+  const error = searchParams.error;
+  
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-background">
+      <div className="w-full max-w-md space-y-8">
+        {/* Header */}
+        <div className="text-center">
+          <h1 className="text-4xl font-bold tracking-tight neon-text mb-6">
+            CyberPulse
+          </h1>
+          <h2 className="text-2xl font-bold mb-2">
+            Sign in to your account
+          </h2>
+          <p className="text-gray-400">
+            Access your cybersecurity dashboard
+          </p>
+        </div>
+        
+        {/* Error message */}
+        {error && (
+          <div className="bg-red-900/50 border border-red-500 p-4 rounded-md text-red-200 text-sm">
+            {error === 'CredentialsSignin' ? (
+              <>Invalid credentials. Please check your email and password and try again.</>
+            ) : (
+              <>An error occurred. Please try again.</>
+            )}
+          </div>
+        )}
+        
+        {/* Login form */}
+        <div className="cyber-card p-6">
+          <LoginForm callbackUrl={callbackUrl} />
+        </div>
+        
+        {/* Register link */}
+        <div className="text-center">
+          <p className="text-sm text-gray-400">
+            Don&apos;t have an account?{' '}
+            <Link href="/auth/register" className="text-cyan-400 hover:text-cyan-300">
+              Create one now
+            </Link>
+          </p>
+        </div>
+      </div>
+      
+      {/* Cyberpunk background effects */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black opacity-80" />
+        
+        {/* Grid lines */}
+        <div className="absolute inset-0 cyber-grid opacity-20" />
+        
+        {/* Animated cyberpunk lines */}
+        <svg width="100%" height="100%" className="absolute inset-0 opacity-20">
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          
+          {/* Horizontal lines */}
+          {Array.from({ length: 5 }).map((_, i) => (
+            <line 
+              key={`h-${i}`}
+              x1="0" 
+              y1={`${(i + 1) * 20}%`} 
+              x2="100%" 
+-e 
+
+
+-----------------------------------------
+FILE: app/dashboard/page.js
+-----------------------------------------
+import { Suspense } from 'react';
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth/auth-options';
+
+// Database and models
+import { db } from '@/lib/db';
+import { cyberAttacks, threatActors, predictions } from '@/lib/db/schema';
+import { desc, and, gte, eq } from 'drizzle-orm';
+
+// Components
+import ThreatCard from '@/components/dashboard/threat-card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader } from '@/components/ui/loader';
+
+export const metadata = {
+  title: 'Threats | CyberPulse',
+  description: 'Cybersecurity threat overview',
+};
+
+export default async function ThreatsPage() {
+  // Authentication check
+  const session = await getServerSession(authOptions);
+  
+  if (!session) {
+    redirect('/auth/login?callbackUrl=/dashboard/threats');
+  }
+  
+  // Get recent attacks
+  const recentAttacks = await db.select()
+    .from(cyberAttacks)
+    .orderBy(desc(cyberAttacks.attackDate))
+    .limit(5);
+  
+  // Get threat actors
+  const threatActorsData = await db.select()
+    .from(threatActors)
+    .limit(10);
+  
+  // Build a map of threat actors by ID for quick lookup
+  const threatActorsMap = new Map();
+  threatActorsData.forEach(actor => {
+    threatActorsMap.set(actor.id, actor);
+  });
+  
+  // Get active predictions
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const activePredictions = await db.select()
+    .from(predictions)
+    .where(
+      and(
+        gte(predictions.generatedDate, thirtyDaysAgo.getTime()),
+        gte(predictions.probability, 0.7)
+      )
+    )
+    .orderBy(desc(predictions.probability))
+    .limit(5);
+  
+  // Process attacks into threat format
+  const attackThreats = recentAttacks.map(attack => ({
+    id: attack.id,
+    title: attack.title,
+    type: 'attack',
+    severity: attack.impactLevel,
+    description: attack.description,
+    date: attack.attackDate,
+    source: attack.source,
+    tags: [attack.attackType, attack.targetedSector, attack.targetedRegion],
+    details: {
+      attackType: attack.attackType,
+      targetedSector: attack.targetedSector,
+      targetedRegion: attack.targetedRegion,
+      threatActor: attack.threatActorId 
+        ? threatActorsMap.get(attack.threatActorId)?.name 
+        : undefined,
+    },
+  }));
+  
+  // Process predictions into threat format
+  const predictionThreats = activePredictions.map(prediction => ({
+    id: prediction.id,
+    title: `Predicted ${prediction.attackType} targeting ${prediction.targetValue}`,
+    type: 'prediction',
+    severity: prediction.severity || (prediction.probability * 10),
+    description: prediction.explanation || `High probability of ${prediction.attackType} attack on ${prediction.targetValue} in the near future.`,
+    date: prediction.generatedDate,
+    source: 'Machine Learning Model',
+    tags: [prediction.attackType || 'unknown', prediction.targetType, prediction.targetValue],
+    details: {
+      probability: prediction.probability,
+      confidence: prediction.confidence,
+      timeframe: prediction.predictedTimeframe,
+    },
+  }));
+  
+  // Combine all threats and sort by date (newest first)
+  const threats = [...attackThreats, ...predictionThreats].sort((a, b) => {
+-e 
+
+
+-----------------------------------------
+FILE: app/dashboard/threats/[id]/page.tsx
+-----------------------------------------
+import { notFound } from 'next/navigation';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/auth-options';
+import Link from 'next/link';
+
+// Database and models
+import { db } from '@/lib/db';
+import { cyberAttacks, threatActors, predictions, vulnerabilities } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+
+// Components
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Calendar, User, Target, AlertTriangle, Shield, Globe, ExternalLink } from 'lucide-react';
+
+// Helper function to format date
+function formatDate(timestamp: number): string {
+  return new Date(timestamp).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+// Generate metadata for the page
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const id = params.id;
+  
+  // Try to find this threat in different tables
+  const attack = await db.query.cyberAttacks.findFirst({
+    where: eq(cyberAttacks.id, id),
+  });
+  
+  const prediction = await db.query.predictions.findFirst({
+    where: eq(predictions.id, id),
+  });
+  
+  const vulnerability = await db.query.vulnerabilities.findFirst({
+    where: eq(vulnerabilities.id, id),
+  });
+  
+  // Get the title from whichever entity was found
+  const title = attack?.title || prediction?.targetValue || vulnerability?.title || 'Threat Details';
+  
+  return {
+    title: `${title} | CyberPulse`,
+    description: 'Detailed threat information',
+  };
+}
+
+export default async function ThreatDetailPage({ params }: { params: { id: string } }) {
+  // Authentication check
+  const session = await getServerSession(authOptions);
+  
+  if (!session) {
+    return notFound();
+  }
+  
+  const id = params.id;
+  
+  // Try to find this threat in different tables
+  const attack = await db.query.cyberAttacks.findFirst({
+    where: eq(cyberAttacks.id, id),
+    with: {
+      threatActor: true,
+    },
+  });
+  
+  const prediction = await db.query.predictions.findFirst({
+    where: eq(predictions.id, id),
+    with: {
+      model: true,
+    },
+  });
+  
+  const vulnerability = await db.query.vulnerabilities.findFirst({
+    where: eq(vulnerabilities.id, id),
+  });
+  
+  // If not found in any table, return 404
+  if (!attack && !prediction && !vulnerability) {
+    return notFound();
+  }
+  
+  // Determine the type of threat
+  const threatType = attack ? 'attack' : prediction ? 'prediction' : 'vulnerability';
+  
+  // Get related vulnerabilities if this is an attack
+  let relatedVulnerabilities = [];
+  if (attack?.vulnerabilitiesExploited) {
+    try {
+      const vulnIds = JSON.parse(attack.vulnerabilitiesExploited);
+      if (Array.isArray(vulnIds) && vulnIds.length > 0) {
+        relatedVulnerabilities = await db
+          .select()
+          .from(vulnerabilities)
+          .where(vulnIds.map(id => eq(vulnerabilities.id, id)))
+          .limit(5);
+-e 
+
+
+-----------------------------------------
+FILE: app/dashboard/threats/page.tsx
+-----------------------------------------
+import { Suspense } from 'react';
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth/auth-options';
+
+// Database and models
+import { db } from '@/lib/db';
+import { cyberAttacks, threatActors, predictions } from '@/lib/db/schema';
+import { desc, and, gte, eq } from 'drizzle-orm';
+
+// Components
+import ThreatCard from '@/components/dashboard/threat-card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader } from '@/components/ui/loader';
+
+export const metadata = {
+  title: 'Threats | CyberPulse',
+  description: 'Cybersecurity threat overview',
+};
+
+export default async function ThreatsPage() {
+  // Authentication check
+  const session = await getServerSession(authOptions);
+  
+  if (!session) {
+    redirect('/auth/login?callbackUrl=/dashboard/threats');
+  }
+  
+  // Get recent attacks
+  const recentAttacks = await db.select()
+    .from(cyberAttacks)
+    .orderBy(desc(cyberAttacks.attackDate))
+    .limit(5);
+  
+  // Get threat actors
+  const threatActorsData = await db.select()
+    .from(threatActors)
+    .limit(10);
+  
+  // Build a map of threat actors by ID for quick lookup
+  const threatActorsMap = new Map();
+  threatActorsData.forEach(actor => {
+    threatActorsMap.set(actor.id, actor);
+  });
+  
+  // Get active predictions
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const activePredictions = await db.select()
+    .from(predictions)
+    .where(
+      and(
+        gte(predictions.generatedDate, thirtyDaysAgo.getTime()),
+        gte(predictions.probability, 0.7)
+      )
+    )
+    .orderBy(desc(predictions.probability))
+    .limit(5);
+  
+  // Process attacks into threat format
+  const attackThreats = recentAttacks.map(attack => ({
+    id: attack.id,
+    title: attack.title,
+    type: 'attack' as const,
+    severity: attack.impactLevel,
+    description: attack.description,
+    date: attack.attackDate,
+    source: attack.source,
+    tags: [attack.attackType, attack.targetedSector, attack.targetedRegion],
+    details: {
+      attackType: attack.attackType,
+      targetedSector: attack.targetedSector,
+      targetedRegion: attack.targetedRegion,
+      threatActor: attack.threatActorId 
+        ? threatActorsMap.get(attack.threatActorId)?.name 
+        : undefined,
+    },
+  }));
+  
+  // Process predictions into threat format
+  const predictionThreats = activePredictions.map(prediction => ({
+    id: prediction.id,
+    title: `Predicted ${prediction.attackType} targeting ${prediction.targetValue}`,
+    type: 'prediction' as const,
+    severity: prediction.severity || (prediction.probability * 10),
+    description: prediction.explanation || `High probability of ${prediction.attackType} attack on ${prediction.targetValue} in the near future.`,
+    date: prediction.generatedDate,
+    source: 'Machine Learning Model',
+    tags: [prediction.attackType || 'unknown', prediction.targetType, prediction.targetValue],
+    details: {
+      probability: prediction.probability,
+      confidence: prediction.confidence,
+      timeframe: prediction.predictedTimeframe,
+    },
+  }));
+  
+  // Combine all threats and sort by date (newest first)
+  const threats = [...attackThreats, ...predictionThreats].sort((a, b) => {
+-e 
+
+
+-----------------------------------------
+FILE: app/dashboard/layout.tsx
+-----------------------------------------
+import { getServerSession } from 'next-auth/next';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth/auth-options';
+
+// Components
+import Header from '@/components/layout/header';
+import Sidebar from '@/components/layout/sidebar';
+import Footer from '@/components/layout/footer';
+
+export const metadata = {
+  title: 'Dashboard | CyberPulse',
+  description: 'Real-time cybersecurity threat intelligence dashboard',
+};
+
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // Check if user is authenticated
+  const session = await getServerSession(authOptions);
+  
+  // If not authenticated, redirect to login page
+  if (!session) {
+    redirect('/auth/login?callbackUrl=/dashboard');
+  }
+  
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Header */}
+      <Header user={session.user} />
+      
+      {/* Main content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar user={session.user} />
+        
+        {/* Main content area */}
+        <div className="flex-1 overflow-auto p-4 md:p-6">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </div>
+      </div>
+      
+      {/* Footer */}
+      <Footer />
+      
+      {/* Cyberpunk effects */}
+      <div className="fixed inset-0 pointer-events-none z-[-1]">
+        {/* Grid background */}
+        <div className="absolute inset-0 cyber-grid opacity-10" />
+        
+        {/* Scanning line effect */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyber-blue-500 to-transparent opacity-30" style={{ animation: 'scan 8s linear infinite' }} />
+      </div>
+    </div>
+  );
+}-e 
+
+
+-----------------------------------------
+FILE: app/dashboard/attack-map/page.tsx
+-----------------------------------------
+import { Metadata } from 'next';
+import { Suspense } from 'react';
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth/auth-options';
+
+// Database and models
+import { db } from '@/lib/db';
+import { cyberAttacks, threatActors } from '@/lib/db/schema';
+import { desc, gte } from 'drizzle-orm';
+
+// UI Components
+import AttackMap from '@/components/dashboard/attack-map';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Loader from '@/components/ui/loader';
+
+export const metadata: Metadata = {
+  title: 'Attack Map | CyberPulse',
+  description: 'Real-time visualization of cyber attacks',
+};
+
+export default async function AttackMapPage() {
+  // Check authentication
+  const session = await getServerSession(authOptions);
+  
+  if (!session) {
+    redirect('/auth/login?callbackUrl=/dashboard/attack-map');
+  }
+  
+  // Get recent attacks
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const recentAttacks = await db.query.cyberAttacks.findMany({
+    where: gte(cyberAttacks.attackDate, thirtyDaysAgo.getTime()),
+    orderBy: [desc(cyberAttacks.attackDate)],
+    limit: 100,
+    with: {
+      threatActor: true,
+    },
+  });
+  
+  // Get statistics
+  const attacksByRegion = recentAttacks.reduce((acc, attack) => {
+    const region = attack.targetedRegion;
+    if (!acc[region]) {
+      acc[region] = 0;
+    }
+    acc[region]++;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const attacksByType = recentAttacks.reduce((acc, attack) => {
+    const type = attack.attackType;
+    if (!acc[type]) {
+      acc[type] = 0;
+    }
+    acc[type]++;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const attacksBySector = recentAttacks.reduce((acc, attack) => {
+    const sector = attack.targetedSector;
+    if (!acc[sector]) {
+      acc[sector] = 0;
+    }
+    acc[sector]++;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2 neon-text">Global Attack Map</h1>
+          <p className="text-gray-400">
+            Real-time visualization of cyber attacks based on threat intelligence data
+          </p>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+            <span className="text-sm">Critical</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
+            <span className="text-sm">High</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+            <span className="text-sm">Medium</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+            <span className="text-sm">Low</span>
+          </div>
+        </div>
+      </div>
+      
+-e 
+
+
+-----------------------------------------
+FILE: app/dashboard/vulnerabilities/page.tsx
+-----------------------------------------
+import { Metadata } from 'next';
+import { Suspense } from 'react';
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth/auth-options';
+
+// Data fetching
+import { fetchCisaKevData, fetchNvdData } from '@/lib/utils/fetcher';
+
+// Database and models
+import { db } from '@/lib/db';
+import { vulnerabilities } from '@/lib/db/schema';
+import { desc, eq, gte } from 'drizzle-orm';
+
+// UI Components
+import VulnerabilityTable from '@/components/dashboard/vulnerability-table';
+import ThreatCard from '@/components/dashboard/threat-card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Loader from '@/components/ui/loader';
+
+export const metadata: Metadata = {
+  title: 'Vulnerabilities | CyberPulse',
+  description: 'Critical vulnerability intelligence and analysis',
+};
+
+export default async function VulnerabilitiesPage() {
+  // Check authentication
+  const session = await getServerSession(authOptions);
+  
+  if (!session) {
+    redirect('/auth/login?callbackUrl=/dashboard/vulnerabilities');
+  }
+  
+  // Get recent critical vulnerabilities
+  const criticalVulnerabilities = await db.select()
+    .from(vulnerabilities)
+    .where(gte(vulnerabilities.severity, 9.0))
+    .orderBy(desc(vulnerabilities.publishedDate))
+    .limit(10);
+  
+  // Get exploited vulnerabilities
+  const exploitedVulnerabilities = await db.select()
+    .from(vulnerabilities)
+    .where(eq(vulnerabilities.exploitedInWild, 1))
+    .orderBy(desc(vulnerabilities.publishedDate))
+    .limit(10);
+  
+  // Format vulnerabilities for the UI
+  const formattedCriticalVulns = criticalVulnerabilities.map(vuln => ({
+    id: vuln.id,
+    title: vuln.title,
+    severity: getSeverityLabel(vuln.severity),
+    score: vuln.severity,
+    published: new Date(vuln.publishedDate).toLocaleDateString(),
+    vector: JSON.parse(vuln.sourceData)?.metrics?.cvssMetricV31?.[0]?.cvssData?.vectorString || '',
+  }));
+  
+  const formattedExploitedVulns = exploitedVulnerabilities.map(vuln => ({
+    id: vuln.id,
+    title: vuln.title,
+    severity: getSeverityLabel(vuln.severity),
+    score: vuln.severity,
+    published: new Date(vuln.publishedDate).toLocaleDateString(),
+    vector: JSON.parse(vuln.sourceData)?.metrics?.cvssMetricV31?.[0]?.cvssData?.vectorString || '',
+  }));
+  
+  // Create featured vulnerabilities for cards
+  const featuredVulnerabilities = exploitedVulnerabilities.slice(0, 3).map(vuln => {
+    const sourceData = JSON.parse(vuln.sourceData);
+    return {
+      id: vuln.id,
+      title: vuln.title,
+      type: 'vulnerability' as const,
+      severity: vuln.severity,
+      description: vuln.description,
+      date: vuln.publishedDate,
+      source: 'CISA KEV',
+      tags: ['Exploited', 'Critical'],
+      details: {
+        cveId: vuln.id,
+        cvssScore: vuln.severity,
+        affectedSystems: JSON.parse(vuln.affectedSystems || '[]'),
+        attackVector: vuln.attackVector,
+      },
+    };
+  });
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2 neon-text">Vulnerability Intelligence</h1>
+          <p className="text-gray-400">
+            Critical vulnerabilities from CISA KEV and the National Vulnerability Database
+          </p>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+-e 
+
+
+-----------------------------------------
+FILE: app/dashboard/predictions/page.tsx
+-----------------------------------------
+import { Suspense } from 'react';
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth/auth-options';
+
+// Database
+import { db } from '@/lib/db';
+import { predictions, predictionModels } from '@/lib/db/schema';
+import { desc, gte } from 'drizzle-orm';
+
+// ML functions
+import { getPredictionsForCommonSectors } from '@/lib/ml/prediction';
+
+// Components
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import PredictionCard from '@/components/dashboard/prediction-card';
+import { Loader } from '@/components/ui/loader';
+import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
+
+export const metadata = {
+  title: 'Predictions | CyberPulse',
+  description: 'Machine learning-powered cybersecurity predictions',
+};
+
+export default async function PredictionsPage() {
+  // Authentication check
+  const session = await getServerSession(authOptions);
+  
+  if (!session) {
+    redirect('/auth/login?callbackUrl=/dashboard/predictions');
+  }
+  
+  // Fetch recent predictions from the database
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const recentPredictions = await db.select()
+    .from(predictions)
+    .where(
+      gte(predictions.generatedDate, thirtyDaysAgo.getTime())
+    )
+    .orderBy(desc(predictions.probability))
+    .limit(9);
+  
+  // Fetch sector predictions
+  const sectorPredictions = await getPredictionsForCommonSectors();
+  
+  // Fetch ML model stats
+  const modelStats = await db.select({
+    id: predictionModels.id,
+    name: predictionModels.name,
+    accuracy: predictionModels.accuracy,
+    trainingDate: predictionModels.trainingDate,
+    lastUsed: predictionModels.lastUsed,
+  })
+  .from(predictionModels)
+  .orderBy(desc(predictionModels.trainingDate))
+  .limit(1);
+  
+  const model = modelStats[0] || {
+    accuracy: 0.85,
+    trainingDate: new Date(),
+  };
+  
+  // Count predictions by severity
+  const criticalCount = recentPredictions.filter(p => p.severity && p.severity >= 8).length;
+  const highCount = recentPredictions.filter(p => p.severity && p.severity >= 6 && p.severity < 8).length;
+  const mediumCount = recentPredictions.filter(p => p.severity && p.severity >= 4 && p.severity < 6).length;
+  const lowCount = recentPredictions.filter(p => p.severity && p.severity < 4).length;
+  
+  // Helper to get trend icon based on value
+  const getTrendIcon = (value: number) => {
+    if (value > 0) return <ArrowUp className="h-4 w-4 text-red-500" />;
+    if (value < 0) return <ArrowDown className="h-4 w-4 text-green-500" />;
+    return <Minus className="h-4 w-4 text-gray-500" />;
+  };
+  
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold neon-text">Threat Predictions</h1>
+        
+        <div className="flex space-x-2">
+          <Button variant="cyber" size="sm">
+            New Prediction
+          </Button>
+          <Button variant="cyberGhost" size="sm">
+            Filter
+          </Button>
+        </div>
+      </div>
+      
+      {/* Stats grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card variant="cyberOutline">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start">
+              <div>
+-e 
+
+
+-----------------------------------------
+FILE: app/layout.tsx
+-----------------------------------------
+import './globals.css';
+import { Inter, Rajdhani, IBM_Plex_Mono } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/react';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/auth-options';
+
+// Font configurations
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const rajdhani = Rajdhani({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-cyber',
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  display: 'swap',
+  variable: '--font-mono',
+});
+
+export const metadata = {
+  title: 'CyberPulse | Predictive Cybersecurity Intelligence',
+  description: 'Real-time cyber threat prediction using machine learning with data from CISA, NVD, and other authoritative sources.',
+  keywords: ['cybersecurity', 'threat intelligence', 'machine learning', 'predictive analytics', 'CISA', 'NVD', 'vulnerability'],
+  authors: [{ name: 'CyberPulse Team' }],
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
+};
+
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getServerSession(authOptions);
+  
+  return (
+    <html 
+      lang="en" 
+      suppressHydrationWarning 
+      className={`${inter.variable} ${rajdhani.variable} ${ibmPlexMono.variable}`}
+    >
+      <head>
+        {/* Preconnect to external resources */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+      </head>
+      <body className="font-cyber bg-background text-foreground">
+        <div className="scanline" />
+        
+        {/* Page content */}
+        <main>{children}</main>
+        
+        {/* Vercel Analytics */}
+        <Analytics />
+      </body>
+    </html>
+  );
+}-e 
+
+
+-----------------------------------------
+FILE: app/api/auth/register/route.ts
+-----------------------------------------
+import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+import { db, schema } from '@/lib/db';
+import { createId } from '@paralleldrive/cuid2'; // Changed from uuid import
+import { eq } from 'drizzle-orm';
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { email, name, password } = body;
+
+    if (!email || !name || !password) {
+      return new NextResponse('Missing required fields', { status: 400 });
+    }
+
+    // Check if user already exists using Drizzle syntax
+    const existingUsers = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.email, email.toLowerCase())) // Added toLowerCase for case-insensitive check
+      .limit(1);
+    
+    const existingUser = existingUsers.length > 0 ? existingUsers[0] : null;
+
+    if (existingUser) {
+      return new NextResponse('Email already in use', { status: 409 });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user using Drizzle syntax
+    await db
+      .insert(schema.users)
+      .values({
+        id: createId(), // Using createId() instead of uuidv4()
+        name,
+        email: email.toLowerCase(), // Store email in lowercase
+        passwordHash: hashedPassword, // Change to passwordHash to match schema
+        role: 'user',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+    return new NextResponse('User registered successfully', { status: 201 });
+  } catch (error) {
+    console.error('[REGISTRATION_ERROR]', error);
+    // Add more detailed error logging
+    console.error('[REGISTRATION_ERROR_DETAILS]', JSON.stringify(error, null, 2));
+    return new NextResponse('Internal server error', { status: 500 });
+  }
+}-e 
+
+
+-----------------------------------------
+FILE: app/api/auth/[...nextauth]/route.ts
+-----------------------------------------
+import NextAuth from 'next-auth';
+import { authOptions } from '@/lib/auth/auth-options';
+
+// Initialize NextAuth.js
+const handler = NextAuth(authOptions);
+
+// Export handler for both GET and POST methods
+export { handler as GET, handler as POST };-e 
+
+
+-----------------------------------------
+FILE: app/api/auth/login/page.tsx
+-----------------------------------------
+// This file serves as a redirect for the login API endpoint.
+// The actual API functionality is implemented in the route.ts file.
+
+import { redirect } from 'next/navigation';
+
+export default function LoginApiPage() {
+  // Redirect to the login page
+  redirect('/auth/login');
+}-e 
+
+
+-----------------------------------------
+FILE: app/api/dashboard/threats/page.tsx
+-----------------------------------------
+// This is a placeholder for the API threats page
+// It redirects to the actual threats page
+
+import { redirect } from 'next/navigation';
+
+export default function ThreatsApiPage() {
+  // Redirect to the actual threats page
+  redirect('/dashboard/threats');
+}-e 
+
+
+-----------------------------------------
+FILE: app/api/dashboard/layout.tsx
+-----------------------------------------
+// This is a layout file for API routes under /api/dashboard.
+// In Next.js App Router, API routes don't typically have layouts.
+// This file exists to ensure proper structure but doesn't provide visual layout.
+
+import { NextResponse } from 'next/server';
+
+export default function DashboardApiLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // This is a placeholder layout for API routes
+  // It doesn't actually render any UI
+  return children;
+}
+
+// Handle requests to this layout directly
+export async function GET() {
+  return NextResponse.json({
+    error: 'This is an API directory, not a page',
+    message: 'Please use specific API endpoints under this path',
+  }, { status: 404 });
+}-e 
+
+
+-----------------------------------------
+FILE: app/api/dashboard/attack-map/page.tsx
+-----------------------------------------
+// This is a placeholder for the API attack-map page
+// It redirects to the actual attack-map page
+
+import { redirect } from 'next/navigation';
+
+export default function AttackMapApiPage() {
+  // Redirect to the actual attack-map page
+  redirect('/dashboard/attack-map');
+}-e 
+
+
+-----------------------------------------
+FILE: app/api/dashboard/page.tsx
+-----------------------------------------
+import { Suspense } from 'react';
+import { getServerSession } from 'next-auth/next';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth/auth-options';
+
+// API clients
+import { getKevCatalogStats } from '@/lib/api/cisa';
+import { fetchRecentVulnerabilities, fetchCriticalVulnerabilities } from '@/lib/api/nvd';
+
+// Database and models
+import { db } from '@/lib/db';
+import { vulnerabilities, cyberAttacks, predictions } from '@/lib/db/schema';
+import { eq, desc, and, gte, lte } from 'drizzle-orm';
+
+// ML prediction
+import { getPredictionsForCommonSectors } from '@/lib/ml/prediction';
+
+// UI Components
+import ThreatMeter from '@/components/dashboard/threat-meter';
+import AttackMap from '@/components/dashboard/attack-map';
+import PredictionCard from '@/components/dashboard/prediction-card';
+import StatsGrid from '@/components/dashboard/stats-grid';
+import VulnerabilityTable from '@/components/dashboard/vulnerability-table';
+import ThreatCard from '@/components/dashboard/threat-card';
+import { CyberLoader } from '@/components/ui/loader';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+// Dashboard page server component
+export default async function DashboardPage() {
+  // Authentication check
+  const session = await getServerSession(authOptions);
+  
+  if (!session) {
+    redirect('/auth/login?callbackUrl=/dashboard');
+  }
+  
+  // Fetch data
+  const [
+    kevStats,
+    recentVulnerabilities,
+    criticalVulnerabilities,
+    sectorPredictions,
+    recentAttacks,
+    activePredictions
+  ] = await Promise.all([
+    fetchKevStats(),
+    fetchRecentVulns(),
+    fetchCriticalVulns(),
+    fetchSectorPredictions(),
+    fetchRecentAttacks(),
+    fetchActivePredictions(),
+  ]);
+  
+  // Calculate global threat level
+  const threatLevel = calculateGlobalThreatLevel(
+    kevStats,
+    recentVulnerabilities,
+    criticalVulnerabilities,
+    sectorPredictions
+  );
+  
+  return (
+    <div className="space-y-6">
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+        <h1 className="text-3xl font-bold neon-text">Cyber Threat Dashboard</h1>
+        <div className="text-sm text-gray-400">
+          Last updated: {new Date().toLocaleString()}
+        </div>
+      </div>
+      
+      {/* Global threat level gauge */}
+      <Card variant="cyber">
+        <CardHeader>
+          <CardTitle>Global Threat Level</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ThreatMeter level={threatLevel} />
+        </CardContent>
+      </Card>
+      
+      {/* Key statistics */}
+      <Card variant="cyber">
+        <CardHeader>
+          <CardTitle>Threat Intelligence Statistics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Suspense fallback={<CyberLoader text="Loading statistics..." />}>
+            <StatsGrid 
+              kevStats={kevStats}
+              vulnerabilityCount={{
+                total: recentVulnerabilities.length,
+                critical: criticalVulnerabilities.length
+              }}
+              attackStats={{
+                recentCount: recentAttacks.length,
+                predictedCount: activePredictions.length
+              }}
+            />
+          </Suspense>
+-e 
+
+
+-----------------------------------------
+FILE: app/api/dashboard/vulnerabilities/page.tsx
+-----------------------------------------
+// This is a placeholder for the API vulnerabilities page
+// It redirects to the actual vulnerabilities page
+
+import { redirect } from 'next/navigation';
+
+export default function VulnerabilitiesApiPage() {
+  // Redirect to the actual vulnerabilities page
+  redirect('/dashboard/vulnerabilities');
+}-e 
+
+
+-----------------------------------------
+FILE: app/api/dashboard/predictions/page.tsx
+-----------------------------------------
+// This is a placeholder for the API predictions page
+// It redirects to the actual predictions page
+
+import { redirect } from 'next/navigation';
+
+export default function PredictionsApiPage() {
+  // Redirect to the actual predictions page
+  redirect('/dashboard/predictions');
+}-e 
+
+
+-----------------------------------------
+FILE: app/api/threat-data/nvd/route.ts
+-----------------------------------------
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/auth-options';
+import { 
+  fetchVulnerabilities, 
+  fetchRecentVulnerabilities,
+  fetchCriticalVulnerabilities 
+} from '@/lib/api/nvd';
+import { db } from '@/lib/db';
+import { vulnerabilities } from '@/lib/db/schema';
+import { NvdVulnerabilityParams, NvdVulnerabilityResponse } from '@/types/api';
+
+// Add this line to tell Next.js this is a dynamic route
+export const dynamic = 'force-dynamic';
+
+/**
+ * GET /api/threat-data/nvd
+ * 
+ * Fetches vulnerability data from the National Vulnerability Database (NVD)
+ */
+export async function GET(request: Request) {
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const cveId = searchParams.get('cveId');
+    const keywordSearch = searchParams.get('keywordSearch');
+    const isRecent = searchParams.get('recent') === 'true';
+    const isCritical = searchParams.get('critical') === 'true';
+    const days = parseInt(searchParams.get('days') || '30', 10);
+    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    
+    // Parse date parameters
+    const pubStartDate = searchParams.get('pubStartDate')
+      ? new Date(searchParams.get('pubStartDate')!)
+      : undefined;
+      
+    const pubEndDate = searchParams.get('pubEndDate')
+      ? new Date(searchParams.get('pubEndDate')!)
+      : undefined;
+      
+    const lastModStartDate = searchParams.get('lastModStartDate')
+      ? new Date(searchParams.get('lastModStartDate')!)
+      : undefined;
+      
+    const lastModEndDate = searchParams.get('lastModEndDate')
+      ? new Date(searchParams.get('lastModEndDate')!)
+      : undefined;
+    
+    // Parse severity
+    const cvssV3Severity = searchParams.get('cvssV3Severity') as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | undefined;
+    const cvssV2Severity = searchParams.get('cvssV2Severity') as 'HIGH' | 'MEDIUM' | 'LOW' | undefined;
+    
+    // Parse pagination
+    const resultPerPage = parseInt(searchParams.get('resultPerPage') || '50', 10);
+    const startIndex = parseInt(searchParams.get('startIndex') || '0', 10);
+    
+    // Other parameters
+    const cpeName = searchParams.get('cpeName');
+    const isExploitable = searchParams.get('isExploitable') === 'true' ? true : undefined;
+    
+    let nvdVulnerabilities;
+    
+    // Handle different types of requests
+    if (isRecent) {
+      // Fetch recent vulnerabilities
+      nvdVulnerabilities = await fetchRecentVulnerabilities(days, limit);
+    } else if (isCritical) {
+      // Fetch critical vulnerabilities
+      nvdVulnerabilities = await fetchCriticalVulnerabilities(limit);
+    } else if (cveId) {
+      // Fetch specific CVE
+      const result = await fetchVulnerabilities({ cveId });
+      nvdVulnerabilities = result.vulnerabilities;
+    } else {
+      // Fetch vulnerabilities with filters
+      const params: NvdVulnerabilityParams = {
+        keywordSearch,
+        pubStartDate,
+        pubEndDate,
+        lastModStartDate,
+        lastModEndDate,
+        cvssV3Severity,
+        cvssV2Severity,
+        cpeName,
+        isExploitable,
+        resultPerPage,
+        startIndex,
+      };
+      
+      const result = await fetchVulnerabilities(params);
+-e 
+
+
+-----------------------------------------
+FILE: app/api/threat-data/cisa/route.ts
+-----------------------------------------
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/auth-options';
+import { fetchCisaKevCatalog, getKevCatalogStats } from '@/lib/api/cisa';
+import { db } from '@/lib/db';
+import { vulnerabilities } from '@/lib/db/schema';
+import { CisaKevCatalogResponse } from '@/types/api';
+
+// Add this line to tell Next.js this is a dynamic route
+export const dynamic = 'force-dynamic';
+
+/**
+ * GET /api/threat-data/cisa
+ * 
+ * Fetches CISA Known Exploited Vulnerabilities (KEV) Catalog data
+ */
+export async function GET(request: Request) {
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const statsOnly = searchParams.get('stats') === 'true';
+    const limit = parseInt(searchParams.get('limit') || '100', 10);
+    const days = parseInt(searchParams.get('days') || '0', 10);
+    const vendor = searchParams.get('vendor');
+    
+    if (statsOnly) {
+      // Get KEV statistics
+      const stats = await getKevCatalogStats();
+      
+      return NextResponse.json({
+        success: true,
+        data: stats,
+        timestamp: new Date(),
+      });
+    }
+    
+    // Fetch the KEV catalog
+    const catalog = await fetchCisaKevCatalog();
+    
+    // Apply filters
+    let filteredVulns = catalog.vulnerabilities;
+    
+    // Filter by days
+    if (days > 0) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      
+      filteredVulns = filteredVulns.filter(vuln => {
+        const addedDate = new Date(vuln.dateAdded);
+        return addedDate >= cutoffDate;
+      });
+    }
+    
+    // Filter by vendor
+    if (vendor) {
+      const vendorLower = vendor.toLowerCase();
+      filteredVulns = filteredVulns.filter(vuln => 
+        vuln.vendorProject.toLowerCase().includes(vendorLower)
+      );
+    }
+    
+    // Apply limit
+    if (limit > 0 && limit < filteredVulns.length) {
+      filteredVulns = filteredVulns.slice(0, limit);
+    }
+    
+    // Log the API request
+    console.log(`[API] CISA KEV data fetched: ${filteredVulns.length} vulnerabilities`);
+    
+    // Store in database (could be implemented as a background task)
+    storeCisaVulnerabilities(filteredVulns);
+    
+    // Return response
+    const response: CisaKevCatalogResponse = {
+      success: true,
+      data: {
+        ...catalog,
+        vulnerabilities: filteredVulns,
+      },
+      timestamp: new Date(),
+    };
+    
+    return NextResponse.json(response);
+    
+  } catch (error) {
+    console.error('[API] Error fetching CISA KEV data:', error);
+    
+    return NextResponse.json(
+      {
+        success: false,
+-e 
+
+
+-----------------------------------------
+FILE: app/api/threat-data/stats/route.ts
+-----------------------------------------
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/auth-options';
+import { getKevCatalogStats } from '@/lib/api/cisa';
+import { db } from '@/lib/db';
+import { vulnerabilities, cyberAttacks, predictions } from '@/lib/db/schema';
+import { count, gt, gte, eq, and, desc } from 'drizzle-orm';
+import { StatsResponse } from '@/types/api';
+
+// Add this line to tell Next.js this is a dynamic route
+export const dynamic = 'force-dynamic';
+
+/**
+ * GET /api/threat-data/stats
+ * 
+ * Get aggregated statistics for the dashboard
+ */
+export async function GET(request: Request) {
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    // Get CISA KEV statistics
+    const kevStats = await getKevCatalogStats();
+    
+    // Get vulnerability statistics
+    const vulnerabilityStats = await getVulnerabilityStats();
+    
+    // Get attack statistics
+    const attackStats = await getAttackStats();
+    
+    // Prepare response
+    const response: StatsResponse = {
+      success: true,
+      data: {
+        kevStats,
+        vulnerabilityCount: vulnerabilityStats,
+        attackStats,
+      },
+      timestamp: new Date(),
+    };
+    
+    return NextResponse.json(response);
+    
+  } catch (error) {
+    console.error('[API] Error fetching stats:', error);
+    
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch statistics',
+        timestamp: new Date(),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Get vulnerability statistics from the database
+ */
+async function getVulnerabilityStats() {
+  // Calculate dates
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  // Count total vulnerabilities
+  const totalResult = await db
+    .select({ count: count() })
+    .from(vulnerabilities);
+  
+  // Count critical vulnerabilities (CVSS score >= 9.0)
+  const criticalResult = await db
+    .select({ count: count() })
+    .from(vulnerabilities)
+    .where(gte(vulnerabilities.severity, 9.0));
+  
+  // Count vulnerabilities exploited in the wild
+  const exploitedResult = await db
+    .select({ count: count() })
+    .from(vulnerabilities)
+    .where(eq(vulnerabilities.exploitedInWild, 1));
+  
+  // Count recent vulnerabilities (published in the last 30 days)
+  const recentResult = await db
+    .select({ count: count() })
+    .from(vulnerabilities)
+    .where(gte(vulnerabilities.publishedDate, thirtyDaysAgo.getTime()));
+  
+  return {
+    total: totalResult[0]?.count || 0,
+    critical: criticalResult[0]?.count || 0,
+    exploitedInWild: exploitedResult[0]?.count || 0,
+-e 
+
+
+-----------------------------------------
+FILE: app/api/threat-data/predictions/route.ts
+-----------------------------------------
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/auth-options';
+import { predictAttacks, getPredictionsForCommonSectors } from '@/lib/ml/prediction';
+import { db } from '@/lib/db';
+import { predictions } from '@/lib/db/schema';
+import { desc, gte, lte } from 'drizzle-orm';
+import { PredictionRequestBody, PredictionResponse } from '@/types/api';
+
+// Add this line to tell Next.js this is a dynamic route
+export const dynamic = 'force-dynamic';
+
+/**
+ * GET /api/threat-data/predictions
+ * 
+ * Get predictions based on query parameters
+ */
+export async function GET(request: Request) {
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const sectorsOnly = searchParams.get('sectors') === 'true';
+    const recentOnly = searchParams.get('recent') === 'true';
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const minProbability = parseFloat(searchParams.get('minProbability') || '0.6');
+    
+    if (sectorsOnly) {
+      // Get predictions for common sectors
+      const sectorPredictions = await getPredictionsForCommonSectors();
+      
+      return NextResponse.json({
+        success: true,
+        data: sectorPredictions,
+        timestamp: Date.now(),
+      });
+    }
+    
+    if (recentOnly) {
+      // Get recent predictions from the database
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const recentPredictions = await db.select()
+        .from(predictions)
+        .where(
+          gte(predictions.generatedDate, thirtyDaysAgo.getTime())
+        )
+        .orderBy(desc(predictions.probability))
+        .limit(limit);
+      
+      return NextResponse.json({
+        success: true,
+        data: recentPredictions,
+        timestamp: Date.now(),
+      });
+    }
+    
+    // If no specific request, return a 400 error
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Please specify a prediction type (sectors=true or recent=true)',
+        timestamp: Date.now(),
+      },
+      { status: 400 }
+    );
+    
+  } catch (error) {
+    console.error('[API] Error fetching predictions:', error);
+    
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch predictions',
+        timestamp: Date.now(),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/threat-data/predictions
+ * 
+ * Create a new prediction
+ */
+export async function POST(request: Request) {
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+-e 
+
+
+-----------------------------------------
+FILE: app/api/webhooks/route.ts
+-----------------------------------------
+import { NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { vulnerabilities, cyberAttacks, indicators } from '@/lib/db/schema';
+import { createId } from '@paralleldrive/cuid2';
+import { WebhookPayload, WebhookResponse } from '@/types/api';
+
+/**
+ * Webhook signature verification secret
+ * Would typically be stored in environment variables
+ */
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'your-webhook-secret';
+
+/**
+ * POST /api/webhooks
+ * 
+ * Receive data from external sources via webhooks
+ */
+export async function POST(request: Request) {
+  try {
+    // Parse request body
+    const body: WebhookPayload = await request.json();
+    
+    // Get request headers
+    const signature = request.headers.get('x-webhook-signature');
+    
+    // Verify signature if provided
+    if (signature) {
+      // Simple signature verification example
+      // In production, implement more secure verification methods
+      const isValid = verifySignature(JSON.stringify(body), signature);
+      
+      if (!isValid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Invalid webhook signature',
+            timestamp: new Date(),
+          },
+          { status: 401 }
+        );
+      }
+    }
+    
+    // Process webhook data based on type
+    let processed = false;
+    
+    switch (body.type) {
+      case 'vulnerability':
+        await processVulnerabilityWebhook(body.data);
+        processed = true;
+        break;
+        
+      case 'attack':
+        await processAttackWebhook(body.data);
+        processed = true;
+        break;
+        
+      case 'indicator':
+        await processIndicatorWebhook(body.data);
+        processed = true;
+        break;
+        
+      default:
+        // Unknown webhook type
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Unknown webhook type',
+            timestamp: new Date(),
+          },
+          { status: 400 }
+        );
+    }
+    
+    // Return response
+    const response: WebhookResponse = {
+      success: true,
+      data: {
+        received: true,
+        processed,
+      },
+      timestamp: new Date(),
+    };
+    
+    return NextResponse.json(response);
+    
+  } catch (error) {
+    console.error('[API] Error processing webhook:', error);
+    
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to process webhook',
+        timestamp: new Date(),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+-e 
+
+
+-----------------------------------------
+FILE: app/page.tsx
+-----------------------------------------
+"use client"
+import Link from 'next/link';
+import Image from 'next/image';
+
+export default function Home() {
+  return (
+    <div className="min-h-screen flex flex-col">
+      {/* Hero Section with Cyberpunk Theme */}
+      <main className="flex-grow flex flex-col items-center justify-center text-center px-4 sm:px-6 lg:px-8 py-16 sm:py-24 relative overflow-hidden">
+        {/* Animated background grid */}
+        <div className="absolute inset-0 grid grid-cols-12 grid-rows-6 gap-1 z-0 opacity-30">
+          {Array.from({ length: 72 }).map((_, i) => (
+            <div 
+              key={i} 
+              className="bg-gray-900 border border-cyan-500/20"
+              style={{
+                animation: `pulse ${Math.random() * 3 + 2}s infinite alternate`,
+              }}
+            />
+          ))}
+        </div>
+        
+        {/* Animated circuit lines */}
+        <div className="absolute inset-0 z-0">
+          <svg width="100%" height="100%" className="opacity-20">
+            <defs>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            
+            {/* Horizontal lines */}
+            {Array.from({ length: 10 }).map((_, i) => (
+              <line 
+                key={`h-${i}`}
+                x1="0" 
+                y1={`${(i + 1) * 10}%`} 
+                x2="100%" 
+                y2={`${(i + 1) * 10}%`}
+                stroke="cyan" 
+                strokeWidth="1" 
+                strokeDasharray="10,30,60" 
+                strokeDashoffset={i * 37}
+                filter="url(#glow)"
+              >
+                <animate 
+                  attributeName="stroke-dashoffset" 
+                  values={`${i * 100};${i * -100}`} 
+                  dur={`${20 + i * 5}s`} 
+                  repeatCount="indefinite" 
+                />
+              </line>
+            ))}
+            
+            {/* Vertical lines */}
+            {Array.from({ length: 10 }).map((_, i) => (
+              <line 
+                key={`v-${i}`}
+                x1={`${(i + 1) * 10}%`} 
+                y1="0" 
+                x2={`${(i + 1) * 10}%`} 
+                y2="100%"
+                stroke="magenta" 
+                strokeWidth="1" 
+                strokeDasharray="20,40,5" 
+                strokeDashoffset={i * 43}
+                filter="url(#glow)"
+              >
+                <animate 
+                  attributeName="stroke-dashoffset" 
+                  values={`${i * -100};${i * 100}`} 
+                  dur={`${25 + i * 3}s`} 
+                  repeatCount="indefinite" 
+                />
+              </line>
+            ))}
+          </svg>
+        </div>
+        
+        <div className="cyber-card p-8 max-w-4xl w-full mx-auto z-10 border border-cyan-500/50 shadow-lg shadow-cyan-500/20">
+          <h1 className="text-5xl sm:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-fuchsia-500">
+            CyberPulse
+          </h1>
+          <p className="text-xl sm:text-2xl mb-8 text-gray-300">
+            Real-time cyber threat prediction powered by machine learning
+          </p>
+          
+          <div className="relative h-64 mb-8 overflow-hidden rounded-lg border border-cyan-500/30">
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-900/80 via-gray-800/80 to-gray-900/80 backdrop-blur-lg" />
+            
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center z-10 p-6">
+                <h2 className="text-2xl font-bold mb-4 text-fuchsia-400">
+                  Predictive Cyber Threat Intelligence
+                </h2>
+                <p className="max-w-lg mx-auto text-gray-300">
+-e 
+
+
+-----------------------------------------
+FILE: app/globals.css
+-----------------------------------------
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    
+    --primary: 180 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 330 100% 50%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: 280 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
+    
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    background-image: radial-gradient(
+      circle at 50% 50%,
+      rgba(16, 16, 20, 0.9) 0%,
+      rgba(8, 8, 12, 1) 100%
+    );
+    background-attachment: fixed;
+  }
+  
+  /* Cyberpunk-themed scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(0, 255, 255, 0.7), rgba(255, 0, 255, 0.7));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(0, 255, 255, 1), rgba(255, 0, 255, 1));
+  }
+}
+
+@layer components {
+  .neon-text {
+    text-shadow: 
+      0 0 5px rgba(0, 255, 255, 0.7),
+      0 0 10px rgba(0, 255, 255, 0.5),
+      0 0 15px rgba(0, 255, 255, 0.3);
+    color: rgb(0, 255, 255);
+  }
+  
+  .neon-text-pink {
+    text-shadow: 
+      0 0 5px rgba(255, 0, 255, 0.7),
+      0 0 10px rgba(255, 0, 255, 0.5),
+      0 0 15px rgba(255, 0, 255, 0.3);
+    color: rgb(255, 0, 255);
+  }
+  
+  .data-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .cyber-card {
+-e 
+
+

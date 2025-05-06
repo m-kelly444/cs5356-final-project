@@ -99,203 +99,138 @@ const ThreatMeter: React.FC<ThreatMeterProps> = ({ level }) => {
       .attr('stop-opacity', 1);
     
     fillGradient.append('stop')
-      .attr('offset', '40%')
-      .attr('stop-color', '#FFBD00')
-      .attr('stop-opacity', 1);
-    
-    fillGradient.append('stop')
-      .attr('offset', '75%')
-      .attr('stop-color', '#FF5E00')
-      .attr('stop-opacity', 1);
-    
-    fillGradient.append('stop')
       .attr('offset', '100%')
-      .attr('stop-color', '#FF0043')
+      .attr('stop-color', threatLevelColor())
       .attr('stop-opacity', 1);
     
-    // Create arc generator
-    const arc = d3.arc()
+    // Create arc generators
+    const backgroundArc = d3.arc()
       .innerRadius(radius - 40)
       .outerRadius(radius - 10)
       .startAngle(-Math.PI)
-      .endAngle(0);
+      .endAngle(Math.PI / 2);
     
-    // Draw background arc
+    const foregroundArc = d3.arc()
+      .innerRadius(radius - 40)
+      .outerRadius(radius - 10)
+      .startAngle(-Math.PI)
+      .endAngle((level / 100) * (3 * Math.PI / 2) - Math.PI);
+    
+    // Add background arc
     g.append('path')
-      .datum({ endAngle: Math.PI / 2 })
-      .attr('d', arc as any)
+      .attr('d', backgroundArc as any)
       .attr('fill', 'url(#backgroundGradient)')
       .attr('stroke', '#4A5568')
       .attr('stroke-width', 1);
     
-    // Draw the value arc
-    const value = level / 100; // Normalize to 0-1
-    const angleScale = d3.scaleLinear()
-      .domain([0, 1])
-      .range([-Math.PI, 0]);
-    
-    const valueArc = d3.arc()
-      .innerRadius(radius - 40)
-      .outerRadius(radius - 10)
-      .startAngle(-Math.PI)
-      .endAngle(angleScale(0)); // Start at 0
-    
-    // Create the path with initial angle
-    const path = g.append('path')
-      .datum({ endAngle: angleScale(0) })
-      .attr('d', valueArc as any)
+    // Add foreground arc (the gauge level)
+    g.append('path')
+      .attr('d', foregroundArc as any)
       .attr('fill', 'url(#fillGradient)')
-      .attr('filter', 'url(#glow)');
-    
-    // Animate the arc from the previous value to the new value
-    path.transition()
-      .duration(1000)
-      .attrTween('d', (d: any) => {
-        const startAngle = angleScale(previousLevel.current / 100);
-        const endAngle = angleScale(value);
-        const interpolate = d3.interpolate(
-          { endAngle: startAngle || -Math.PI },
-          { endAngle }
-        );
-        return (t: number) => valueArc(interpolate(t)) as string;
-      });
-    
-    // Update the previous level ref
-    previousLevel.current = level;
-    
-    // Add tick marks
-    const tickScale = d3.scaleLinear()
-      .domain([0, 100])
-      .range([-Math.PI, 0]);
-    
-    const tickData = [0, 20, 40, 60, 80, 100];
-    
-    // Add tick marks
-    g.selectAll('.tick')
-      .data(tickData)
-      .enter()
-      .append('line')
-      .attr('class', 'tick')
-      .attr('x1', d => (radius - 42) * Math.cos(tickScale(d)))
-      .attr('y1', d => (radius - 42) * Math.sin(tickScale(d)))
-      .attr('x2', d => (radius - 8) * Math.cos(tickScale(d)))
-      .attr('y2', d => (radius - 8) * Math.sin(tickScale(d)))
-      .attr('stroke', '#CBD5E0')
-      .attr('stroke-width', d => d % 40 === 0 ? 2 : 1)
-      .attr('opacity', 0.6);
-    
-    // Add tick labels
-    g.selectAll('.tick-label')
-      .data(tickData)
-      .enter()
-      .append('text')
-      .attr('class', 'tick-label')
-      .attr('x', d => (radius - 55) * Math.cos(tickScale(d)))
-      .attr('y', d => (radius - 55) * Math.sin(tickScale(d)))
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'middle')
-      .attr('fill', '#CBD5E0')
-      .attr('font-size', '10px')
-      .text(d => d.toString());
-    
-    // Add needle
-    const needlePath = d3.line()
-      .x(d => d[0])
-      .y(d => d[1]);
-    
-    const needlePoints = [
-      [0, -10],
-      [-5, 0],
-      [0, (radius - 45)],
-      [5, 0],
-      [0, -10]
-    ];
-    
-    const needleGroup = g.append('g')
-      .attr('class', 'needle')
-      .style('transform-origin', '0 0')
-      .style('transform', 'rotate(-180deg)'); // Start at minimum
-    
-    needleGroup.append('path')
-      .attr('d', needlePath(needlePoints as [number, number][]))
-      .attr('fill', threatLevelColor())
-      .attr('stroke', '#E2E8F0')
+      .attr('stroke', threatLevelColor())
       .attr('stroke-width', 1)
       .attr('filter', 'url(#glow)');
     
-    // Add central circle
-    needleGroup.append('circle')
+    // Add ticks
+    const tickData = [0, 20, 40, 60, 80, 100];
+    
+    tickData.forEach(tick => {
+      const tickAngle = (tick / 100) * (3 * Math.PI / 2) - Math.PI;
+      const tickInnerPoint = [(radius - 40) * Math.cos(tickAngle), (radius - 40) * Math.sin(tickAngle)];
+      const tickOuterPoint = [(radius - 5) * Math.cos(tickAngle), (radius - 5) * Math.sin(tickAngle)];
+      
+      // Tick line
+      g.append('line')
+        .attr('x1', tickInnerPoint[0])
+        .attr('y1', tickInnerPoint[1])
+        .attr('x2', tickOuterPoint[0])
+        .attr('y2', tickOuterPoint[1])
+        .attr('stroke', '#CBD5E0')
+        .attr('stroke-width', 2);
+      
+      // Tick label
+      g.append('text')
+        .attr('x', (radius - 55) * Math.cos(tickAngle))
+        .attr('y', (radius - 55) * Math.sin(tickAngle))
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'middle')
+        .attr('transform', `rotate(${tickAngle * 180 / Math.PI + 90}, ${(radius - 55) * Math.cos(tickAngle)}, ${(radius - 55) * Math.sin(tickAngle)})`)
+        .attr('fill', '#CBD5E0')
+        .attr('font-size', '12px')
+        .attr('font-family', 'monospace')
+        .text(tick.toString());
+    });
+    
+    // Add needle
+    const needleAngle = (level / 100) * (3 * Math.PI / 2) - Math.PI;
+    const needlePoint = [(radius - 20) * Math.cos(needleAngle), (radius - 20) * Math.sin(needleAngle)];
+    
+    // Needle triangle
+    g.append('path')
+      .attr('d', `M 0,0 L ${needlePoint[0]},${needlePoint[1]} L ${needlePoint[0] * 0.98},${needlePoint[1] * 1.02} Z`)
+      .attr('fill', threatLevelColor())
+      .attr('filter', 'url(#glow)');
+    
+    // Needle center
+    g.append('circle')
       .attr('cx', 0)
       .attr('cy', 0)
       .attr('r', 10)
-      .attr('fill', threatLevelColor())
-      .attr('stroke', '#E2E8F0')
-      .attr('stroke-width', 1)
+      .attr('fill', '#2D3748')
+      .attr('stroke', threatLevelColor())
+      .attr('stroke-width', 2)
       .attr('filter', 'url(#glow)');
     
-    // Animate the needle
-    const needleAngle = angleScale(value) * (180 / Math.PI);
-    needleGroup.transition()
-      .duration(1000)
-      .style('transform', `rotate(${needleAngle}deg)`);
-    
-    // Add central text
+    // Display current level
     g.append('text')
-      .attr('class', 'threat-value')
       .attr('x', 0)
-      .attr('y', -40)
+      .attr('y', -radius / 2)
       .attr('text-anchor', 'middle')
       .attr('fill', threatLevelColor())
-      .attr('font-size', '36px')
+      .attr('font-size', '24px')
       .attr('font-weight', 'bold')
-      .attr('filter', 'url(#glow)')
-      .text(level.toString());
-    
-    g.append('text')
-      .attr('class', 'threat-label')
-      .attr('x', 0)
-      .attr('y', -15)
-      .attr('text-anchor', 'middle')
-      .attr('fill', threatLevelColor())
-      .attr('font-size', '14px')
-      .attr('font-weight', 'bold')
+      .attr('font-family', 'var(--font-cyber)')
       .attr('filter', 'url(#glow)')
       .text(threatLevelText());
+    
+    g.append('text')
+      .attr('x', 0)
+      .attr('y', -radius / 2 + 30)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#E2E8F0')
+      .attr('font-size', '16px')
+      .attr('font-family', 'var(--font-mono)')
+      .text(`${Math.round(level)}%`);
+    
+    // Update previous level
+    previousLevel.current = level;
     
   }, [level]);
   
   return (
-    <div className="w-full flex flex-col items-center">
-      <svg 
-        ref={svgRef} 
-        viewBox="0 0 400 200"
+    <div className="flex flex-col items-center w-full">
+      <svg
+        ref={svgRef}
         width="100%"
-        height="200"
-        className="overflow-visible"
+        height="200px"
+        viewBox="0 0 400 200"
+        preserveAspectRatio="xMidYMid meet"
       />
-      <div className="cyber-grid mt-4 w-full max-w-lg">
-        <div className="grid grid-cols-5 text-center text-xs border border-gray-700 rounded-lg overflow-hidden">
-          <div className="bg-green-800/30 p-2">
-            <div className="font-bold">LOW</div>
-            <div>0-20</div>
+      <div className="grid grid-cols-5 w-full max-w-md mt-4">
+        {['LOW', 'GUARDED', 'ELEVATED', 'HIGH', 'CRITICAL'].map((label, i) => (
+          <div key={i} className="flex flex-col items-center">
+            <div 
+              className={`w-3 h-3 rounded-full ${
+                i === 0 ? 'bg-green-500' :
+                i === 1 ? 'bg-blue-500' :
+                i === 2 ? 'bg-yellow-500' :
+                i === 3 ? 'bg-orange-500' :
+                'bg-red-500'
+              }`} 
+            />
+            <span className="text-xs mt-1 text-gray-400">{label}</span>
           </div>
-          <div className="bg-blue-800/30 p-2">
-            <div className="font-bold">GUARDED</div>
-            <div>21-40</div>
-          </div>
-          <div className="bg-yellow-800/30 p-2">
-            <div className="font-bold">ELEVATED</div>
-            <div>41-60</div>
-          </div>
-          <div className="bg-orange-800/30 p-2">
-            <div className="font-bold">HIGH</div>
-            <div>61-80</div>
-          </div>
-          <div className="bg-red-800/30 p-2">
-            <div className="font-bold">CRITICAL</div>
-            <div>81-100</div>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
