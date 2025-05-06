@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/auth-options';
 import { db } from '@/lib/db';
 import { cyberAttacks, threatActors, predictions } from '@/lib/db/schema';
 import { desc, and, gte, eq } from 'drizzle-orm';
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
