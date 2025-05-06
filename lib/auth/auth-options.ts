@@ -78,10 +78,10 @@ export const authOptions: NextAuthOptions = {
     updateAge: 24 * 60 * 60, // 24 hours
   },
   
-  // Pages configurations
+  // Pages configurations - UPDATED
   pages: {
     signIn: '/login',
-    signOut: '/auth/logout',
+    signOut: '/logout',
     error: '/auth/error',
   },
   
