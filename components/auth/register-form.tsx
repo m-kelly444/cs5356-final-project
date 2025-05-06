@@ -111,7 +111,7 @@ export default function RegisterForm() {
       if (signInResult?.error) {
         // Sign in failed after registration
         setGeneralError('Account created successfully, but could not sign in automatically. Please try signing in.');
-        router.push('/auth/login');
+        router.push('/login');
         return;
       }
       

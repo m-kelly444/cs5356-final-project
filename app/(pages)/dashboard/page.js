@@ -24,7 +24,7 @@ export default async function ThreatsPage() {
   const session = await getServerSession(authOptions);
   
   if (!session) {
-    redirect('/auth/login?callbackUrl=/dashboard/threats');
+    redirect('/login?callbackUrl=/dashboard/threats');
   }
   
   // Get recent attacks

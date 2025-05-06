@@ -24,7 +24,7 @@ export default async function AttackMapPage() {
   const session = await getServerSession(authOptions);
   
   if (!session) {
-    redirect('/auth/login?callbackUrl=/dashboard/attack-map');
+    redirect('/login?callbackUrl=/dashboard/attack-map');
   }
   
   // Get recent attacks

@@ -28,7 +28,7 @@ export default async function PredictionsPage() {
   const session = await getServerSession(authOptions);
   
   if (!session) {
-    redirect('/auth/login?callbackUrl=/dashboard/predictions');
+    redirect('/login?callbackUrl=/dashboard/predictions');
   }
   
   // Fetch recent predictions from the database

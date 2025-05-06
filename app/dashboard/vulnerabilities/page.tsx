@@ -28,7 +28,7 @@ export default async function VulnerabilitiesPage() {
   const session = await getServerSession(authOptions);
   
   if (!session) {
-    redirect('/auth/login?callbackUrl=/dashboard/vulnerabilities');
+    redirect('/login?callbackUrl=/dashboard/vulnerabilities');
   }
   
   // Get recent critical vulnerabilities

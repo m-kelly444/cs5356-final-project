@@ -162,7 +162,7 @@ export default function Home() {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 
-              href="/auth/login" 
+              href="/login" 
               className="cyber-border bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white font-bold py-3 px-8 rounded-md transition-all"
             >
               Log In

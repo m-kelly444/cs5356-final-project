@@ -22,7 +22,7 @@ export default async function DashboardLayout({
   
   // If not authenticated, redirect to login page
   if (!session) {
-    redirect('/auth/login?callbackUrl=/dashboard');
+    redirect('/login?callbackUrl=/dashboard');
   }
   
   return (

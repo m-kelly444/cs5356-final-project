@@ -44,7 +44,7 @@ export default async function RegisterPage() {
         <div className="text-center">
           <p className="text-sm text-gray-400">
             Already have an account?{' '}
-            <Link href="/auth/login" className="text-cyan-400 hover:text-cyan-300">
+            <Link href="/login" className="text-cyan-400 hover:text-cyan-300">
               Sign in
             </Link>
           </p>
