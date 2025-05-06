@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       return NextResponse.json({
         success: true,
         data: sectorPredictions,
-        timestamp: Date.now(),
+        timestamp: new Date(),
       });
     }
     
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
       return NextResponse.json({
         success: true,
         data: recentPredictions,
-        timestamp: Date.now(),
+        timestamp: new Date(),
       });
     }
     
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
       {
         success: false,
         error: 'Please specify a prediction type (sectors=true or recent=true)',
-        timestamp: Date.now(),
+        timestamp: new Date(),
       },
       { status: 400 }
     );
@@ -82,7 +82,7 @@ export async function GET(request: Request) {
       {
         success: false,
         error: 'Failed to fetch predictions',
-        timestamp: Date.now(),
+        timestamp: new Date(),
       },
       { status: 500 }
     );
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
         {
           success: false,
           error: 'Missing required fields',
-          timestamp: Date.now(),
+          timestamp: new Date(),
         },
         { status: 400 }
       );
@@ -145,7 +145,7 @@ export async function POST(request: Request) {
     const response: PredictionResponse = {
       success: true,
       data: predictionResult,
-      timestamp: Date.now(),
+      timestamp: new Date(),
     };
     
     return NextResponse.json(response);

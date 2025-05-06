@@ -114,7 +114,7 @@ export async function GET(request: Request) {
       totalResults: nvdVulnerabilities.length,
       resultsPerPage: limit,
       startIndex: 0,
-      timestamp: Date.now(),
+      timestamp: new Date(),
     };
     
     return NextResponse.json(response);
@@ -126,7 +126,7 @@ export async function GET(request: Request) {
       {
         success: false,
         error: 'Failed to fetch NVD data',
-        timestamp: Date.now(),
+        timestamp: new Date(),
       },
       { status: 500 }
     );
