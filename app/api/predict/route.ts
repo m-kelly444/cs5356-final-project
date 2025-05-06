@@ -1,6 +1,5 @@
 // app/api/predict/route.ts
 export const runtime = 'nodejs'; // 🔒 Force Node.js runtime
-
 import { getPredictionsForCommonSectors } from '@/lib/ml/prediction';
 
 export async function GET() {
