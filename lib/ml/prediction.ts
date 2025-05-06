@@ -468,7 +468,7 @@ async function getTargetInfo(targetType: string, targetValue: string): Promise<a
 }
 
 /**
- * Get attack predictions for common sectors
+ * Get attack predictions for common sectors with enhanced debugging
  */
 export async function getPredictionsForCommonSectors(): Promise<any[]> {
   const sectors = [
@@ -486,10 +486,43 @@ export async function getPredictionsForCommonSectors(): Promise<any[]> {
   const predictions = await Promise.all(
     sectors.map(async sector => {
       try {
-        const result = await predictAttacks({
-          targetType: 'sector',
-          targetValue: sector,
-        });
+        console.log(`\n=== Starting prediction for sector: ${sector} ===`);
+        
+        // Add try-catch around getMostRecentModel
+        let modelId;
+        try {
+          console.log(`Getting most recent model...`);
+          modelId = await getMostRecentModel();
+          console.log(`Model ID: ${modelId}`);
+        } catch (error) {
+          console.error(`Error getting model for ${sector}:`, error);
+          console.error(`Error message:`, error.message);
+          console.error(`Error stack:`, error.stack);
+          throw new Error(`Failed to get model for ${sector}: ${error.message}`);
+        }
+        
+        // Add try-catch around predictAttacks
+        let result;
+        try {
+          console.log(`Making prediction for ${sector}...`);
+          result = await predictAttacks({
+            targetType: 'sector',
+            targetValue: sector,
+          });
+          console.log(`Prediction successful for ${sector}`);
+        } catch (error) {
+          console.error(`Error making prediction for ${sector}:`, error);
+          console.error(`Error message:`, error.message);
+          console.error(`Error stack:`, error.stack);
+          
+          // Check if it's the SQL syntax error
+          if (error.message && error.message.includes('tagged-template')) {
+            console.error(`SQL syntax error detected for sector: ${sector}`);
+            console.error(`This specific error suggests old SQL syntax is being used somewhere`);
+          }
+          
+          throw new Error(`Failed to predict for ${sector}: ${error.message}`);
+        }
         
         return {
           sector,
@@ -498,7 +531,17 @@ export async function getPredictionsForCommonSectors(): Promise<any[]> {
           probability: result.predictions[0]?.probability,
         };
       } catch (error) {
-        console.error(`Error predicting for sector ${sector}:`, error);
+        console.error(`\n!!! Error predicting for sector ${sector} !!!`);
+        console.error(`Error message:`, error.message);
+        console.error(`Full error:`, error);
+        
+        // Add more specific debugging for this sector error
+        if (sector === 'Transportation') {
+          console.error(`\n🚨 TRANSPORTATION SECTOR ERROR DETECTED 🚨`);
+          console.error(`This is the sector causing the SQL syntax error`);
+          console.error(`Check for any special handling of Transportation in your codebase`);
+        }
+        
         return {
           sector,
           error: error.message,
