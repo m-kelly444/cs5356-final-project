@@ -1,3 +1,4 @@
+/// <reference path="../../env.d.ts" />
 import { NextAuthOptions } from 'next-auth';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
@@ -5,6 +6,19 @@ import { eq } from 'drizzle-orm';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { ExtendedJWT, ExtendedSession, User, UserRole } from '@/types/auth';
+
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      NODE_ENV: 'development' | 'production' | 'test';
+      NEXTAUTH_SECRET: string;
+      NEXTAUTH_URL: string;
+      DATABASE_URL: string;
+      DATABASE_AUTH_TOKEN?: string;
+      NVD_API_KEY: string;
+    }
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   // Configure authentication providers

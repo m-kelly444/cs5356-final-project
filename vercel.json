@@ -1,0 +1,8 @@
+{
+    "functions": {
+      "api/predict.ts": {
+        "runtime": "nodejs"
+      }
+    }
+  }
+  

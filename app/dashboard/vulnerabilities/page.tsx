@@ -73,7 +73,7 @@ export default async function VulnerabilitiesPage() {
       type: 'vulnerability' as const,
       severity: vuln.severity,
       description: vuln.description,
-      date: vuln.publishedDate,
+      date: vuln.publishedDate.toISOString(),
       source: 'CISA KEV',
       tags: ['Exploited', 'Critical'],
       details: {
@@ -237,7 +237,7 @@ async function VendorStats() {
       {sortedVendors.map(([vendor, count]) => (
         <li key={vendor} className="flex justify-between items-center">
           <span className="text-gray-300 truncate">{vendor}</span>
-          <span className="text-cyan-400 font-mono">{count}</span>
+          <span className="text-cyan-400 font-mono">{count as number}</span>
         </li>
       ))}
     </ul>
@@ -245,14 +245,19 @@ async function VendorStats() {
 }
 
 // Remediation Stats Component
+interface Vulnerability {
+  cveID: string;
+  dueDate: string;
+}
+
 async function RemediationStats() {
-  const cisaData = await fetchCisaKevCatalog();
+  const cisaData = await fetchCisaKevData();
   const now = new Date();
   const twoWeeksFromNow = new Date();
   twoWeeksFromNow.setDate(twoWeeksFromNow.getDate() + 14);
   
   // Filter vulnerabilities with remediation due in the next 14 days
-  const dueVulnerabilities = cisaData.vulnerabilities.filter(vuln => {
+  const dueVulnerabilities = cisaData.vulnerabilities.filter((vuln: Vulnerability) => {
     const dueDate = new Date(vuln.dueDate);
     return dueDate >= now && dueDate <= twoWeeksFromNow;
   });
@@ -263,7 +268,7 @@ async function RemediationStats() {
   
   return (
     <ul className="space-y-2">
-      {dueVulnerabilities.slice(0, 5).map(vuln => (
+      {dueVulnerabilities.slice(0, 5).map((vuln: Vulnerability) => (
         <li key={vuln.cveID} className="flex justify-between items-center">
           <span className="text-gray-300 truncate">{vuln.cveID}</span>
           <span className="text-cyan-400 font-mono">

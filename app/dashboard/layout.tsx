@@ -28,12 +28,12 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <Header user={session.user} />
+      <Header user={session.user as { id: string; name: string; email: string; image?: string; role?: string }} />
       
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <Sidebar user={session.user} />
+        <Sidebar user={session.user as { id: string; name: string; email: string; image?: string; role?: string }} />
         
         {/* Main content area */}
         <div className="flex-1 overflow-auto p-4 md:p-6">

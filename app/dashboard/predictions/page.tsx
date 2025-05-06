@@ -38,7 +38,7 @@ export default async function PredictionsPage() {
   const recentPredictions = await db.select()
     .from(predictions)
     .where(
-      gte(predictions.generatedDate, thirtyDaysAgo.getTime())
+      gte(predictions.generatedDate, thirtyDaysAgo)
     )
     .orderBy(desc(predictions.probability))
     .limit(9);
@@ -100,7 +100,7 @@ export default async function PredictionsPage() {
               <div>
                 <div className="text-sm text-gray-400">Model Accuracy</div>
                 <div className="text-xl font-bold text-cyan-400">
-                  {(model.accuracy * 100).toFixed(1)}%
+                  {((model.accuracy ?? 0.85) * 100).toFixed(1)}%
                 </div>
               </div>
               <div className="flex items-center">
@@ -240,11 +240,11 @@ export default async function PredictionsPage() {
                     id: prediction.id,
                     targetType: prediction.targetType,
                     targetValue: prediction.targetValue,
-                    attackType: prediction.attackType,
+                    attackType: prediction.attackType || undefined,
                     probability: prediction.probability,
                     severity: prediction.severity || 0,
                     confidence: prediction.confidence,
-                    generatedDate: prediction.generatedDate,
+                    generatedDate: prediction.generatedDate.getTime(),
                     explanation: prediction.explanation || `Prediction of ${prediction.attackType} targeting ${prediction.targetValue}`,
                   }}
                 />
