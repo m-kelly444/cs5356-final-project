@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils/theme';
 import { cva, VariantProps } from 'class-variance-authority';
 

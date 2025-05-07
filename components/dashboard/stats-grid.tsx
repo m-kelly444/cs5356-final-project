@@ -1,4 +1,4 @@
-'use client';
+"use client";import { useState, useEffect } from 'react';'use client';
 
 // StatsGrid component
 // Displays key cybersecurity statistics in a grid layout with trend indicators
@@ -47,10 +47,10 @@ const StatsGrid: React.FC<StatsGridProps> = ({
         const value = Math.floor(progress * (end - start) + start);
         element.textContent = value.toString();
         if (progress < 1) {
-          window.requestAnimationFrame(step);
+          typeof window !== 'undefined' ? window.requestAnimationFrame(step);
         }
       };
-      window.requestAnimationFrame(step);
+      typeof window !== 'undefined' ? window.requestAnimationFrame(step);
     };
     
     // Animate each counter

@@ -1,4 +1,4 @@
-/** @type {import('tailwindcss').Config} */
+import { useState, useEffect } from 'react';/** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
   content: [

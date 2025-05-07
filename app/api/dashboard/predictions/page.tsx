@@ -1,4 +1,4 @@
-// This is a placeholder for the API predictions page
+import { useState, useEffect } from 'react';// This is a placeholder for the API predictions page
 // It redirects to the actual predictions page
 
 import { redirect } from 'next/navigation';

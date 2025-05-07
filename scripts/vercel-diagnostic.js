@@ -1,4 +1,4 @@
-// This script helps diagnose date-related issues in Vercel
+import { useState, useEffect } from 'react';// This script helps diagnose date-related issues in Vercel
 require('../utils/environmentNormalizer');
 
 // Check environment
@@ -53,3 +53,4 @@ problematicFormats.forEach((format, index) => {
 });
 
 console.log('\nDiagnostics complete!');
+// TODO: Manually add suppressHydrationWarning to elements with dates

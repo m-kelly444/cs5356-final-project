@@ -1,4 +1,4 @@
-import '../utils/environmentNormalizer';
+import { useState, useEffect } from 'react';import '../utils/environmentNormalizer';
 
 /**
  * Middleware to normalize date handling between environments

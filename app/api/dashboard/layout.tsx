@@ -1,4 +1,4 @@
-// This is a layout file for API routes under /api/dashboard.
+import { useState, useEffect } from 'react';// This is a layout file for API routes under /api/dashboard.
 // In Next.js App Router, API routes don't typically have layouts.
 // This file exists to ensure proper structure but doesn't provide visual layout.
 

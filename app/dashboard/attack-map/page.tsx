@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import { useState, useEffect } from 'react';import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
@@ -226,4 +226,4 @@ function formatImpactLevel(level: number): string {
   if (level >= 5) return 'High';
   if (level >= 3) return 'Medium';
   return 'Low';
-}
+}// TODO: Manually add suppressHydrationWarning to elements with dates

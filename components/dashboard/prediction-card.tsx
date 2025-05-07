@@ -1,4 +1,4 @@
-'use client';
+import { useState, useEffect } from 'react';'use client';
 
 // PredictionCard component
 // Displays machine learning-based predictions for cyber threats

@@ -1,4 +1,4 @@
-'use client';
+import { useState, useEffect } from 'react';'use client';
 
 // ThreatMeter component
 // A cyberpunk-styled gauge that displays the current threat level

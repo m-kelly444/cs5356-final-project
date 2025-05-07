@@ -1,4 +1,4 @@
-const { db } = require('../lib/db');
+import { useState, useEffect } from 'react';const { db } = require('../lib/db');
 const { users } = require('../lib/db/schema');
 const bcrypt = require('bcryptjs');
 const { createId } = require('@paralleldrive/cuid2');
@@ -24,4 +24,4 @@ createTestUser()
   .catch((error) => {
     console.error('Error creating test user:', error);
     process.exit(1);
-  });
+  });// TODO: Manually add suppressHydrationWarning to elements with dates

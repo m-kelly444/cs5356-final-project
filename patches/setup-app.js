@@ -1,4 +1,4 @@
-/**
+import { useState, useEffect } from 'react';/**
  * This script sets up the application entry points
  */
 

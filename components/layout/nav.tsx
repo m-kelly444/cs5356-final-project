@@ -1,4 +1,4 @@
-'use client';
+"use client";import { useState, useEffect } from 'react';'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -81,12 +81,12 @@ export default function Nav({ transparent = false, centerLinks = false }: Navbar
   // Handle scroll effect for transparent header
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
+      setScrolled(typeof window !== 'undefined' ? window.scrollY > 10);
     };
     
     if (transparent) {
-      window.addEventListener('scroll', handleScroll);
-      return () => window.removeEventListener('scroll', handleScroll);
+      typeof window !== 'undefined' ? window.addEventListener('scroll', handleScroll);
+      return () => typeof window !== 'undefined' ? window.removeEventListener('scroll', handleScroll);
     }
   }, [transparent]);
   
@@ -99,8 +99,8 @@ export default function Nav({ transparent = false, centerLinks = false }: Navbar
       }
     };
     
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    typeof document !== 'undefined' ? document.addEventListener('click', handleClickOutside);
+    return () => typeof document !== 'undefined' ? document.removeEventListener('click', handleClickOutside);
   }, []);
   
   // Toggle dropdown

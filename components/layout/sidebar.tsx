@@ -1,4 +1,4 @@
-'use client';
+"use client";import { useState, useEffect } from 'react';'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -29,8 +29,8 @@ export default function Sidebar({ user }: SidebarProps) {
   // Check if mobile on mount and on resize
   useEffect(() => {
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-      if (window.innerWidth < 1024) {
+      setIsMobile(typeof window !== 'undefined' ? window.innerWidth < 1024);
+      if (typeof window !== 'undefined' ? window.innerWidth < 1024) {
         setIsCollapsed(true);
       }
     };
@@ -39,11 +39,11 @@ export default function Sidebar({ user }: SidebarProps) {
     checkIsMobile();
     
     // Add event listener for window resize
-    window.addEventListener('resize', checkIsMobile);
+    typeof window !== 'undefined' ? window.addEventListener('resize', checkIsMobile);
     
     // Clean up event listener
     return () => {
-      window.removeEventListener('resize', checkIsMobile);
+      typeof window !== 'undefined' ? window.removeEventListener('resize', checkIsMobile);
     };
   }, []);
   

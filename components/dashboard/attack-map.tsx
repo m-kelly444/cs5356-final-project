@@ -1,4 +1,4 @@
-'use client';
+"use client";import { useState, useEffect } from 'react';'use client';
 
 // Interactive Attack Map using D3.js
 // This component visualizes cyber attacks on a world map
@@ -99,10 +99,10 @@ const AttackMap: React.FC<AttackMapProps> = ({ attacks }) => {
     };
     
     handleResize();
-    window.addEventListener('resize', handleResize);
+    typeof window !== 'undefined' ? window.addEventListener('resize', handleResize);
     
     return () => {
-      window.removeEventListener('resize', handleResize);
+      typeof window !== 'undefined' ? window.removeEventListener('resize', handleResize);
     };
   }, []);
   
