@@ -236,5 +236,5 @@ export interface NvdApiResponse<T> {
    * NVD API requires dates in ISO 8601 format: YYYY-MM-DDThh:mm:ss.sssZ
    */
   function formatDate(date: Date): string {
-    return (date instanceof Date && !isNaN(date.getTime()) ? date.toISOString() : null);
+    return date.toISOString();
   }
