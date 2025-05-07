@@ -155,5 +155,5 @@ import {
     if (!isValid(dateObj)) return '';
     
     // Format as ISO string
-    return (dateObj instanceof Date && !isNaN(dateObj.getTime()) ? dateObj.toISOString() : null);
+    return (dateObj instanceof Date && !isNaN(dateObj.getTime()) ? safeToISOString(dateObj) : null);
   }

@@ -1,21 +1,26 @@
 #!/bin/bash
 
-echo "🧹 Removing npm artifacts..."
-rm -f package-lock.json
-rm -f .npmrc
+echo "🔍 Scanning for .toISOString() calls..."
 
-echo "🔁 Reinitializing lockfile with pnpm..."
-pnpm install
+FILES=$(grep -rl --include=\*.{ts,tsx} '\.toISOString()' .)
 
-echo "📌 Creating .npmrc to declare pnpm version..."
-PNPM_VERSION=$(pnpm -v)
-echo "packageManager=pnpm@$PNPM_VERSION" > .npmrc
+if [ -z "$FILES" ]; then
+  echo "✅ No toISOString() calls found. You're good!"
+  exit 0
+fi
 
-echo "📦 Adding files to git..."
-git add pnpm-lock.yaml .npmrc
-git commit -m "Revert to pnpm as primary package manager"
+echo "📦 Patching files and backing up originals..."
 
-echo "🚀 Pushing to origin..."
-git push origin main
+for file in $FILES; do
+  echo "  - $file"
+  cp "$file" "$file.bak"
 
-echo "✅ Project is now fully configured to use pnpm."
+  # Replace any instance of "var.toISOString()" with "safeToISOString(var)"
+  sed -E -i '' 's/([a-zA-Z0-9_]+)\.toISOString\(\)/safeToISOString(\1)/g' "$file"
+
+  # Ensure the helper import is present
+  grep -q "safeToISOString" "$file" || \
+  sed -i '' '1s;^;import { safeToISOString } from "@/lib/utils/date";\n;' "$file"
+done
+
+echo "✅ Replacements complete. Backups saved with .bak extension."
