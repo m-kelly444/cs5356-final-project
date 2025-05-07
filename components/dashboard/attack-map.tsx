@@ -1,4 +1,6 @@
-"use client";import { useState, useEffect } from 'react';'use client';
+'use client';
+
+import { useState, useEffect } from 'react';'use client';
 
 // Interactive Attack Map using D3.js
 // This component visualizes cyber attacks on a world map
