@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';module.exports = {
+module.exports = {
   plugins: {
     tailwindcss: {},
     autoprefixer: {},
