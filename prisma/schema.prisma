@@ -1,5 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Prisma schema for Neon PostgreSQL database with User authentication
 
 generator client {
   provider = "prisma-client-js"
@@ -10,11 +9,57 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Add your models here
-// Example:
-// model User {
-//   id        Int      @id @default(autoincrement())
-//   createdAt DateTime @default(now())
-//   email     String   @unique
-//   name      String?
-// }
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String    // Hashed password - never store plaintext!
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  role          String    @default("user")
+  emailVerified DateTime?
+  image         String?
+  
+  // Relations - add any other models your app needs
+  // For example:
+  // threats      Threat[]
+  // vulnerabilities Vulnerability[]
+}
+
+// Additional models can be added based on your application needs
+// Below are examples you might want to customize:
+
+model Threat {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  severity    String
+  source      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  status      String   @default("active")
+  
+  // Relations
+  // userId      String
+  // user        User     @relation(fields: [userId], references: [id])
+}
+
+model Vulnerability {
+  id          String   @id @default(cuid())
+  cveId       String?  @unique
+  title       String
+  description String
+  cvssScore   Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  // userId      String
+  // user        User     @relation(fields: [userId], references: [id])
+}
+
+// You can add more models as needed for your application
+// For example: AttackMap, Prediction, etc.
+
+// Uncomment the relations in User model and the related fields 
+// in other models if you want to implement these relationships
