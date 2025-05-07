@@ -127,7 +127,7 @@ export default function LoginForm({
       setAsyncState({
         isLoading: false,
         error: null,
-        success: 'Login successful! Redirecting...',
+        success: 'LOGIN SUCCESSFUL',
       });
       
       // Small delay to show success message
