@@ -1,26 +1,21 @@
 #!/bin/bash
 
-echo "🧹 Cleaning Vercel and build cache files..."
+echo "🔍 Searching for .toISOString() usages..."
+FILES=$(grep -rl --include=\*.{ts,tsx} '\.toISOString()' .)
 
-# Remove Vercel config/cache directory
-rm -rf .vercel
+if [ -z "$FILES" ]; then
+  echo "✅ No .toISOString() found."
+  exit 0
+fi
 
-# Remove node_modules and lock files
-rm -rf node_modules
-rm -f package-lock.json
-rm -f yarn.lock
-rm -f pnpm-lock.yaml
+echo "📦 Backing up and patching the following files:"
+for file in $FILES; do
+  echo "  - $file"
+  cp "$file" "${file}.bak" # Backup
 
-# Remove Next.js build output
-rm -rf .next
+  # Replace any expression like "x.toISOString()" with a safe-checked version
+  sed -E -i '' 's/([a-zA-Z0-9_]+)\.toISOString\(\)/(\1 instanceof Date \&\& !isNaN(\1.getTime()) \? \1.toISOString() : null)/g' "$file"
+done
 
-# Remove Vite/SvelteKit build output (adjust as needed)
-rm -rf dist
-rm -rf build
-
-# Remove any other temp/cache folders
-rm -rf .turbo
-rm -rf .cache
-rm -rf .output
-
-echo "✅ Cache cleared. Ready for fresh deployment."
+echo ""
+echo "✅ Done. Originals backed up with .bak extensions."
