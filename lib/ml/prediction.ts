@@ -9,7 +9,7 @@ import * as tf from '@tensorflow/tfjs';
 import { fetchAndNormalizeVulnerabilities, extractFeatures, prepareTrainingData } from './data-processing';
 import { db } from '../db';
 import { predictionModels, predictions } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 
 // Attack types that we can predict
@@ -187,11 +187,12 @@ export async function trainAttackPredictionModel(): Promise<{
  */
 export async function loadModel(modelId: string): Promise<tf.LayersModel> {
   // Get model metadata from database
-  const modelData = await db.query.predictionModels.findFirst({
-    where: eq(predictionModels.id, modelId),
-  });
+  const modelData = await db.select()
+    .from(predictionModels)
+    .where(eq(predictionModels.id, modelId))
+    .limit(1);
   
-  if (!modelData || !modelData.filePath) {
+  if (!modelData[0] || !modelData[0].filePath) {
     throw new Error(`Model with ID ${modelId} not found or has no file path`);
   }
   
@@ -202,7 +203,7 @@ export async function loadModel(modelId: string): Promise<tf.LayersModel> {
   
   // Load the model from disk
   try {
-    const model = await tf.loadLayersModel(`file://./public${modelData.filePath}`);
+    const model = await tf.loadLayersModel(`file://./public${modelData[0].filePath}`);
     return model;
   } catch (error) {
     console.error(`Error loading model ${modelId}:`, error);
@@ -214,11 +215,12 @@ export async function loadModel(modelId: string): Promise<tf.LayersModel> {
  * Get the most recent model
  */
 export async function getMostRecentModel(): Promise<string | null> {
-  const model = await db.query.predictionModels.findFirst({
-    orderBy: (predictionModels, { desc }) => [desc(predictionModels.trainingDate)],
-  });
+  const model = await db.select()
+    .from(predictionModels)
+    .orderBy(desc(predictionModels.trainingDate))
+    .limit(1);
   
-  return model ? model.id : null;
+  return model[0] ? model[0].id : null;
 }
 
 /**
@@ -256,15 +258,16 @@ export async function predictAttacks(
   const model = await loadModel(modelId);
   
   // Get model parameters
-  const modelData = await db.query.predictionModels.findFirst({
-    where: eq(predictionModels.id, modelId),
-  });
+  const modelData = await db.select()
+    .from(predictionModels)
+    .where(eq(predictionModels.id, modelId))
+    .limit(1);
   
-  if (!modelData) {
+  if (!modelData[0]) {
     throw new Error(`Model metadata not found for ID ${modelId}`);
   }
   
-  const params = JSON.parse(modelData.parameters);
+  const params = JSON.parse(modelData[0].parameters);
   const featureNames = params.featureNames;
   const attackTypes = params.attackTypes || ATTACK_TYPES;
   
@@ -346,7 +349,7 @@ export async function predictAttacks(
       // Calculate severity based on probability and type of attack
       severity: calculateSeverity(prob, attackType),
       // Calculate confidence based on model metrics and probability
-      confidence: calculateConfidence(prob, modelData.precision || 0.8),
+      confidence: calculateConfidence(prob, modelData[0].precision || 0.8),
     };
   }).sort((a, b) => b.probability - a.probability);
   
