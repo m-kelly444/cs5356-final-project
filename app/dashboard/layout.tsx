@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
