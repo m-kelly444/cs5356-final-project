@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
-    "@libsql/client": "^0.5.6",
+    "@libsql/client": "^0.15.4",
     "@neondatabase/serverless": "^1.0.0",
     "@paralleldrive/cuid2": "^2.2.2",
     "@tensorflow/tfjs": "^4.22.0",
