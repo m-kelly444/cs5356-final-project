@@ -357,4 +357,409 @@ run_prisma_commands() {
   
   # Run prisma migrate
   if [ "$PACKAGE_MANAGER" == "pnpm" ]; then
-    echo -e "${BLUE}Running: pnpm prisma migrate
+    echo -e "${BLUE}Running: pnpm prisma migrate dev --name $MIGRATION_NAME${NC}"
+    DATABASE_URL=$NEON_DB_URL pnpm prisma migrate dev --name $MIGRATION_NAME
+  else
+    echo -e "${BLUE}Running: npx prisma migrate dev --name $MIGRATION_NAME${NC}"
+    DATABASE_URL=$NEON_DB_URL npx prisma migrate dev --name $MIGRATION_NAME
+  fi
+  
+  # Check if migrate was successful
+  if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Prisma migrate failed. Please check your schema file and database connection.${NC}"
+    
+    CONTINUE=$(prompt_with_default "Do you want to continue anyway? (y/n)" "n")
+    if [[ "$CONTINUE" != "y" && "$CONTINUE" != "Y" ]]; then
+      exit 1
+    fi
+  else
+    echo -e "${GREEN}✅ Prisma migrate completed successfully${NC}"
+  fi
+  
+  return 0
+}
+
+# Function to ensure generated files are in the right places
+ensure_generated_files() {
+  echo -e "\n${YELLOW}Ensuring generated files are in the right places...${NC}"
+  
+  # Check for Prisma client
+  if [ ! -d "./node_modules/.prisma" ] || [ ! -d "./node_modules/@prisma/client" ]; then
+    echo -e "${YELLOW}⚠️ Prisma client not found or incomplete, regenerating...${NC}"
+    
+    REGEN=$(prompt_with_default "Regenerate Prisma client? (y/n)" "y")
+    if [[ "$REGEN" == "y" || "$REGEN" == "Y" ]]; then
+      if [ "$PACKAGE_MANAGER" == "pnpm" ]; then
+        DATABASE_URL=$NEON_DB_URL pnpm prisma generate
+      else
+        DATABASE_URL=$NEON_DB_URL npx prisma generate
+      fi
+    fi
+  fi
+  
+  # For Next.js projects, ensure Prisma is properly initialized
+  if [ "$IS_NEXTJS" = true ]; then
+    echo -e "${BLUE}Checking Prisma setup for Next.js...${NC}"
+    
+    # Check for lib/prisma.ts or similar files
+    PRISMA_CLIENT_FILES=$(find . -name "prisma.js" -o -name "prisma.ts" -o -name "db.js" -o -name "db.ts")
+    
+    if [ -z "$PRISMA_CLIENT_FILES" ]; then
+      echo -e "${YELLOW}⚠️ No Prisma client initialization file found${NC}"
+      
+      CREATE_CLIENT=$(prompt_with_default "Create a Prisma client initialization file? (y/n)" "y")
+      if [[ "$CREATE_CLIENT" == "y" || "$CREATE_CLIENT" == "Y" ]]; then
+        # Create a basic prisma client file
+        mkdir -p "./lib"
+        
+        if grep -q "typescript" "./package.json"; then
+          # TypeScript version
+          cat > "./lib/prisma.ts" << 'EOL'
+import { PrismaClient } from '@prisma/client';
+
+// PrismaClient is attached to the `global` object in development to prevent
+// exhausting your database connection limit.
+// Learn more: https://pris.ly/d/help/next-js-best-practices
+
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
+
+export const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({
+    log: ['query'],
+  });
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+EOL
+          echo -e "${GREEN}✅ Created Prisma client initialization at ./lib/prisma.ts${NC}"
+        else
+          # JavaScript version
+          cat > "./lib/prisma.js" << 'EOL'
+import { PrismaClient } from '@prisma/client';
+
+// PrismaClient is attached to the `global` object in development to prevent
+// exhausting your database connection limit.
+// Learn more: https://pris.ly/d/help/next-js-best-practices
+
+const globalForPrisma = global;
+
+export const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({
+    log: ['query'],
+  });
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+EOL
+          echo -e "${GREEN}✅ Created Prisma client initialization at ./lib/prisma.js${NC}"
+        fi
+      fi
+    else
+      echo -e "${GREEN}✅ Found Prisma client initialization file${NC}"
+    fi
+  fi
+  
+  # Check for .env file with database config
+  if [ ! -f "./.env" ] && [ ! -f "./.env.local" ]; then
+    echo -e "${YELLOW}⚠️ No .env file found${NC}"
+    
+    CREATE_ENV=$(prompt_with_default "Create .env file with database config? (y/n)" "y")
+    if [[ "$CREATE_ENV" == "y" || "$CREATE_ENV" == "Y" ]]; then
+      cat > "./.env" << EOL
+# Database Configuration
+DATABASE_URL="${NEON_DB_URL}"
+
+# Node Environment
+NODE_ENV="${NODE_ENV}"
+EOL
+      echo -e "${GREEN}✅ Created .env file with database configuration${NC}"
+    fi
+  else
+    # Check if DATABASE_URL exists in .env
+    if [ -f "./.env" ] && ! grep -q "DATABASE_URL" "./.env"; then
+      echo -e "${YELLOW}⚠️ DATABASE_URL not found in .env${NC}"
+      
+      UPDATE_ENV=$(prompt_with_default "Add DATABASE_URL to .env file? (y/n)" "y")
+      if [[ "$UPDATE_ENV" == "y" || "$UPDATE_ENV" == "Y" ]]; then
+        echo "DATABASE_URL=\"${NEON_DB_URL}\"" >> "./.env"
+        echo -e "${GREEN}✅ Added DATABASE_URL to .env file${NC}"
+      fi
+    fi
+  fi
+}
+
+# Function to fix date format issues specifically for Next.js + Prisma
+fix_date_formats() {
+  echo -e "\n${YELLOW}Checking and fixing date format issues...${NC}"
+  
+  # Check for DateTime fields in Prisma schema
+  if [ -f "./prisma/schema.prisma" ]; then
+    DATE_FIELDS=$(grep "DateTime" "./prisma/schema.prisma" | wc -l)
+    
+    if [ "$DATE_FIELDS" -gt 0 ]; then
+      echo -e "${BLUE}Found $DATE_FIELDS DateTime fields in Prisma schema${NC}"
+      
+      # Create a middleware file for date validation if it doesn't exist
+      if [ ! -f "./prisma/middleware.js" ] && [ ! -f "./src/lib/prisma-middleware.js" ]; then
+        echo -e "${YELLOW}⚠️ No Prisma middleware found for date validation${NC}"
+        
+        CREATE_MIDDLEWARE=$(prompt_with_default "Create date validation middleware for Prisma? (y/n)" "y")
+        if [[ "$CREATE_MIDDLEWARE" == "y" || "$CREATE_MIDDLEWARE" == "Y" ]]; then
+          mkdir -p "./src/lib"
+          
+          # Create middleware file
+          cat > "./src/lib/prisma-middleware.js" << 'EOL'
+const { PrismaClient } = require('@prisma/client');
+
+const prisma = new PrismaClient();
+
+// Middleware to validate date fields
+prisma.$use(async (params, next) => {
+  // For create/update operations, validate date fields
+  if (params.action === 'create' || params.action === 'update' || params.action === 'upsert') {
+    if (params.args.data) {
+      Object.keys(params.args.data).forEach(key => {
+        // Check if field might be a date (by name)
+        if ((key.toLowerCase().includes('date') || key.toLowerCase().includes('time')) && 
+            params.args.data[key] !== null && 
+            params.args.data[key] !== undefined) {
+          
+          // If it's not already a Date object, try to convert it
+          if (!(params.args.data[key] instanceof Date)) {
+            try {
+              params.args.data[key] = new Date(params.args.data[key]);
+            } catch (e) {
+              console.warn(`Failed to convert ${key} to Date object, setting to null`);
+              params.args.data[key] = null;
+            }
+          }
+        }
+      });
+    }
+  }
+  
+  return next(params);
+});
+
+module.exports = prisma;
+EOL
+          
+          echo -e "${GREEN}✅ Created Prisma middleware for date validation${NC}"
+        fi
+      else
+        echo -e "${GREEN}✅ Prisma middleware exists${NC}"
+      fi
+    else
+      echo -e "${GREEN}✅ No DateTime fields found in Prisma schema${NC}"
+    fi
+  fi
+  
+  # If Next.js, add webpack fix for toISOString errors
+  if [ "$IS_NEXTJS" = true ]; then
+    echo -e "${BLUE}Checking for Next.js toISOString error fix...${NC}"
+    
+    # Check if next.config.js exists
+    if [ -f "./next.config.js" ]; then
+      echo -e "${BLUE}Found next.config.js${NC}"
+      
+      # Check if it already has webpack configuration
+      if grep -q "webpack:" "./next.config.js"; then
+        echo -e "${YELLOW}⚠️ next.config.js already has webpack configuration${NC}"
+        
+        # Ask if user wants to manually edit
+        MANUAL_EDIT=$(prompt_with_default "Would you like to manually edit next.config.js to add the toISOString fix? (y/n)" "n")
+        if [[ "$MANUAL_EDIT" == "y" || "$MANUAL_EDIT" == "Y" ]]; then
+          echo -e "${BLUE}Please add the following to your webpack config in next.config.js:${NC}"
+          echo -e """
+if (isServer) {
+  // Monkey patch to fix toISOString errors
+  config.plugins.push(
+    new webpack.DefinePlugin({
+      \\\"Object.prototype.toISOString\\\": \\`function() { 
+        try { 
+          return Date.prototype.toISOString.call(this); 
+        } catch(e) { 
+          return new Date(this).toISOString(); 
+        } 
+      }\\`,
+    })
+  );
+}
+"""
+          # Wait for user to edit
+          read -p "Press Enter when you've updated the file..."
+        fi
+      else
+        # Ask if they want to update
+        UPDATE_CONFIG=$(prompt_with_default "Update next.config.js with toISOString error fix? (y/n)" "y")
+        if [[ "$UPDATE_CONFIG" == "y" || "$UPDATE_CONFIG" == "Y" ]]; then
+          # Backup the file if backup directory exists
+          if [ -n "$BACKUP_DIR" ]; then
+            cp "./next.config.js" "$BACKUP_DIR/next.config.js"
+          fi
+          
+          # Add webpack configuration
+          sed -i 's/module.exports = {/const webpack = require("webpack");\n\nmodule.exports = {/g' "./next.config.js"
+          sed -i 's/module.exports = {/module.exports = {\n  webpack: (config, { isServer }) => {\n    if (isServer) {\n      \/\/ Monkey patch to fix toISOString errors\n      config.plugins.push(new webpack.DefinePlugin({\n        "Object.prototype.toISOString": `function() { try { return Date.prototype.toISOString.call(this); } catch(e) { return new Date(this).toISOString(); } }`,\n      }));\n    }\n    return config;\n  },/g' "./next.config.js"
+          
+          echo -e "${GREEN}✅ Updated next.config.js with webpack patch for toISOString errors${NC}"
+        fi
+      fi
+    else
+      echo -e "${YELLOW}⚠️ next.config.js not found${NC}"
+      
+      # Ask if they want to create it
+      CREATE_CONFIG=$(prompt_with_default "Create next.config.js with toISOString error fix? (y/n)" "y")
+      if [[ "$CREATE_CONFIG" == "y" || "$CREATE_CONFIG" == "Y" ]]; then
+        # Create basic Next.js config with the fix
+        cat > "./next.config.js" << 'EOL'
+const webpack = require("webpack");
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Monkey patch to fix toISOString errors
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          "Object.prototype.toISOString": `function() { 
+            try { 
+              return Date.prototype.toISOString.call(this); 
+            } catch(e) { 
+              return new Date(this).toISOString(); 
+            } 
+          }`,
+        })
+      );
+    }
+    return config;
+  },
+};
+
+module.exports = nextConfig;
+EOL
+        
+        echo -e "${GREEN}✅ Created next.config.js with toISOString error fix${NC}"
+      fi
+    fi
+    
+    # Check if webpack is installed
+    if ! grep -q "\"webpack\":" "./package.json"; then
+      echo -e "${YELLOW}⚠️ webpack dependency not found in package.json${NC}"
+      
+      # Ask if they want to install it
+      INSTALL_WEBPACK=$(prompt_with_default "Install webpack as a dev dependency? (y/n)" "y")
+      if [[ "$INSTALL_WEBPACK" == "y" || "$INSTALL_WEBPACK" == "Y" ]]; then
+        echo -e "${BLUE}Installing webpack...${NC}"
+        
+        if [ "$PACKAGE_MANAGER" == "pnpm" ]; then
+          pnpm add --save-dev webpack
+        elif [ "$PACKAGE_MANAGER" == "yarn" ]; then
+          yarn add --dev webpack
+        else
+          npm install --save-dev webpack
+        fi
+        
+        echo -e "${GREEN}✅ Installed webpack${NC}"
+      fi
+    fi
+  fi
+}
+
+# Function to clear build cache
+clear_cache() {
+  echo -e "\n${YELLOW}Build Cache${NC}"
+  CLEAR_CACHE=$(prompt_with_default "Clear build cache? (y/n)" "y")
+  
+  if [[ "$CLEAR_CACHE" != "y" && "$CLEAR_CACHE" != "Y" ]]; then
+    echo -e "${BLUE}Skipping cache clearing...${NC}"
+    return 0
+  fi
+  
+  echo -e "${YELLOW}Clearing build cache...${NC}"
+  
+  # Remove Next.js cache
+  if [ -d "./.next" ]; then
+    echo -e "${BLUE}Removing Next.js build cache...${NC}"
+    rm -rf ./.next
+  fi
+  
+  # Clear node_modules cache
+  echo -e "${BLUE}Clearing node_modules cache...${NC}"
+  if [ "$PACKAGE_MANAGER" == "pnpm" ]; then
+    pnpm store prune
+  elif [ "$PACKAGE_MANAGER" == "yarn" ]; then
+    yarn cache clean
+  else
+    npm cache clean --force
+  fi
+  
+  echo -e "${GREEN}✅ Cache cleared${NC}"
+}
+
+# Function to restart the server
+restart_server() {
+  echo -e "\n${YELLOW}Restarting server...${NC}"
+  
+  # Check if package.json has start script
+  if grep -q "\"dev\":" "./package.json"; then
+    echo -e "${BLUE}Restarting server using $PACKAGE_MANAGER run dev...${NC}"
+    $PACKAGE_MANAGER run dev
+  elif grep -q "\"start\":" "./package.json"; then
+    echo -e "${BLUE}Restarting server using $PACKAGE_MANAGER run start...${NC}"
+    $PACKAGE_MANAGER run start
+  else
+    echo -e "${RED}Could not find start or dev script in package.json${NC}"
+    echo -e "${BLUE}Please restart your server manually${NC}"
+  fi
+}
+
+# Main execution
+echo -e "\n${YELLOW}Starting Neon database reset and setup process...${NC}"
+
+# 1. Detect project structure and ORM
+detect_project_structure
+
+# 2. Backup the database
+backup_database
+
+# 3. Drop all tables from the database
+drop_all_tables
+
+# 4. Run Prisma generation and migration commands
+run_prisma_commands
+
+# 5. Ensure generated files are in the right places
+ensure_generated_files
+
+# 6. Fix date format issues
+fix_date_formats
+
+# 7. Clear cache
+clear_cache
+
+echo -e "\n${GREEN}✅ Neon database reset and setup complete!${NC}"
+if [ -n "$BACKUP_DIR" ]; then
+  echo -e "A backup of your original database was created in $BACKUP_DIR"
+fi
+echo -e "The script has:"
+echo -e "  1. Reset the database by dropping all tables"
+echo -e "  2. Run Prisma generation and migration commands"
+echo -e "  3. Ensured all generated files are in the right places"
+echo -e "  4. Fixed date format issues that could cause toISOString errors"
+if [[ "$CLEAR_CACHE" == "y" || "$CLEAR_CACHE" == "Y" ]]; then
+  echo -e "  5. Cleared build caches"
+fi
+
+# Ask if user wants to restart the server
+echo -e "\n${YELLOW}Server Restart${NC}"
+RESTART=$(prompt_with_default "Do you want to restart the server now? (y/n)" "n")
+
+if [[ "$RESTART" == "y" || "$RESTART" == "Y" ]]; then
+  restart_server
+else
+  echo -e "${BLUE}Please restart your server manually when ready${NC}"
+fi
+
+echo -e "\n${GREEN}Done!${NC}"
