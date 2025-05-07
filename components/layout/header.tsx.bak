@@ -1,4 +1,5 @@
-"use client";
+'use client';
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
@@ -26,13 +27,13 @@ export default function Header({ user }: HeaderProps) {
   // Handle scroll event to change header appearance
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(typeof window !== 'undefined' ? typeof window !== 'undefined' ? window.scrollY > 10);
+      setIsScrolled(typeof window !== 'undefined' ? typeof window !== 'undefined' && window.scrollY > 10);
     };
     
-    typeof window !== 'undefined' ? typeof window !== 'undefined' ? window.addEventListener('scroll', handleScroll);
+    typeof window !== 'undefined' ? typeof window !== 'undefined' && window.addEventListener('scroll', handleScroll);
     
     return () => {
-      typeof window !== 'undefined' ? typeof window !== 'undefined' ? window.removeEventListener('scroll', handleScroll);
+      typeof window !== 'undefined' ? typeof window !== 'undefined' && window.removeEventListener('scroll', handleScroll);
     };
   }, []);
   

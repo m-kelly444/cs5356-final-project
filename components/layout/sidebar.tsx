@@ -29,9 +29,11 @@ export default function Sidebar({ user }: SidebarProps) {
   // Check if mobile on mount and on resize
   useEffect(() => {
     const checkIsMobile = () => {
-      setIsMobile(typeof window !== 'undefined' ? typeof window !== 'undefined' && window.innerWidth < 1024);
-      if (typeof window !== 'undefined' ? typeof window !== 'undefined' && window.innerWidth < 1024) {
-        setIsCollapsed(true);
+      if (typeof window !== 'undefined') {
+        setIsMobile(window.innerWidth < 1024);
+        if (window.innerWidth < 1024) {
+          setIsCollapsed(true);
+        }
       }
     };
     
@@ -39,12 +41,14 @@ export default function Sidebar({ user }: SidebarProps) {
     checkIsMobile();
     
     // Add event listener for window resize
-    typeof window !== 'undefined' ? typeof window !== 'undefined' && window.addEventListener('resize', checkIsMobile);
-    
-    // Clean up event listener
-    return () => {
-      typeof window !== 'undefined' ? typeof window !== 'undefined' && window.removeEventListener('resize', checkIsMobile);
-    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', checkIsMobile);
+      
+      // Clean up event listener
+      return () => {
+        window.removeEventListener('resize', checkIsMobile);
+      };
+    }
   }, []);
   
   // Navigation items with icons and paths

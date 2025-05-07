@@ -47,10 +47,10 @@ const StatsGrid: React.FC<StatsGridProps> = ({
         const value = Math.floor(progress * (end - start) + start);
         element.textContent = value.toString();
         if (progress < 1) {
-          typeof window !== 'undefined' ? typeof window !== 'undefined' && window.requestAnimationFrame(step);
+          if (typeof window !== 'undefined') { window.requestAnimationFrame(step); }
         }
       };
-      typeof window !== 'undefined' ? typeof window !== 'undefined' && window.requestAnimationFrame(step);
+      if (typeof window !== 'undefined') { window.requestAnimationFrame(step); }
     };
     
     // Animate each counter

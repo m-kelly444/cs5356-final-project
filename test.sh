@@ -1,51 +1,42 @@
 #!/bin/bash
 
-# Script to fix Next.js client component issues
-echo "Starting Next.js client component fixes..."
+# Script to restore from the 2nd to last backup
+echo "Finding and restoring from the 2nd to last backup..."
 
-# Files that need to be fixed
-FILES=(
-  "app/(pages)/dashboard/page.js"
-  "app/auth/register/page.tsx"
-  "app/dashboard/attack-map/page.tsx"
-  "app/dashboard/layout.tsx"
-  "app/dashboard/predictions/page.tsx"
-)
+# List all backup directories in chronological order
+BACKUP_DIRS=($(ls -td backups/*/ 2>/dev/null))
 
-# Process each file
-for file in "${FILES[@]}"; do
-  echo "Processing $file..."
-  
-  # Check if file exists
-  if [ ! -f "$file" ]; then
-    echo "  Warning: File $file does not exist, skipping."
-    continue
+# Check if we have enough backups
+if [ ${#BACKUP_DIRS[@]} -lt 2 ]; then
+  echo "Error: Not enough backups found. Only ${#BACKUP_DIRS[@]} backup directories exist."
+  exit 1
+fi
+
+# Get the 2nd to last backup
+TARGET_BACKUP="${BACKUP_DIRS[1]}"
+echo "Restoring from backup directory: $TARGET_BACKUP"
+
+# Restore all files from that backup
+for file in "$TARGET_BACKUP"/*.bak; do
+  if [ -f "$file" ]; then
+    # Extract the original filename
+    original_filename=$(basename "$file" .bak)
+    
+    # Try to guess the original path
+    if [[ $original_filename == *"attack-map"* ]]; then
+      restore_path="components/dashboard/$original_filename"
+    elif [[ $original_filename == *"header"* || $original_filename == *"nav"* || $original_filename == *"sidebar"* ]]; then
+      restore_path="components/layout/$original_filename"
+    elif [[ $original_filename == *"stats-grid"* ]]; then
+      restore_path="components/dashboard/$original_filename"
+    else
+      # Default path - you may need to adjust this
+      restore_path="$original_filename"
+    fi
+    
+    echo "Restoring $file to $restore_path"
+    cp "$file" "$restore_path"
   fi
-  
-  # Create a temporary file
-  temp_file=$(mktemp)
-  
-  # Add "use client" directive at the top
-  echo '"use client";' > "$temp_file"
-  echo "" >> "$temp_file"
-  
-  # Fix duplicate imports and write to temp file
-  cat "$file" | 
-    # Remove empty lines at the beginning
-    sed '/./,$!d' |
-    # Fix duplicate React imports
-    sed 's/import { useState, useEffect } from '\''react'\'';import { useState, useEffect } from '\''react'\'';/import { useState, useEffect } from '\''react'\'';/' |
-    # Fix other potential duplicate imports
-    sed 's/\(import {[^}]*} from \)/\1/' >> "$temp_file"
-  
-  # Backup original file
-  cp "$file" "${file}.bak"
-  
-  # Replace original file with fixed version
-  mv "$temp_file" "$file"
-  
-  echo "  Fixed $file ✓"
 done
 
-echo "All files processed. Original files backed up with .bak extension."
-echo "Run your build again to verify the fixes."
+echo "Restoration complete. You may need to manually fix any remaining issues."

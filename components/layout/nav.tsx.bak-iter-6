@@ -81,18 +81,12 @@ export default function Nav({ transparent = false, centerLinks = false }: Navbar
   // Handle scroll effect for transparent header
   useEffect(() => {
     const handleScroll = () => {
-      if (typeof window !== 'undefined') {
-        setScrolled(window.scrollY > 10);
-      }
+      setScrolled(if (typeof window !== 'undefined') { window.scrollY > 10); }
     };
     
     if (transparent) {
-      if (typeof window !== 'undefined') {
-        window.addEventListener('scroll', handleScroll);
-        return () => {
-          window.removeEventListener('scroll', handleScroll);
-        };
-      }
+      if (typeof window !== 'undefined') { window.addEventListener('scroll', handleScroll); }
+      return () => if (typeof window !== 'undefined') { window.removeEventListener('scroll', handleScroll); }
     }
   }, [transparent]);
   
@@ -105,12 +99,8 @@ export default function Nav({ transparent = false, centerLinks = false }: Navbar
       }
     };
     
-    if (typeof document !== 'undefined') {
-      document.addEventListener('click', handleClickOutside);
-      return () => {
-        document.removeEventListener('click', handleClickOutside);
-      };
-    }
+    typeof document !== 'undefined' ? typeof document !== 'undefined' ? document.addEventListener('click', handleClickOutside);
+    return () => typeof document !== 'undefined' ? typeof document !== 'undefined' ? document.removeEventListener('click', handleClickOutside);
   }, []);
   
   // Toggle dropdown

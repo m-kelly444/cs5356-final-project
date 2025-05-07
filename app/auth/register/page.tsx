@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
