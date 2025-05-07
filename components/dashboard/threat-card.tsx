@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import ThreatCard from './threat-card'; // Using your original component
 

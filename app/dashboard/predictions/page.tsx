@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from 'react';
 import { Suspense } from 'react';
 import { getServerSession } from 'next-auth';
