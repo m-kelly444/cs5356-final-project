@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';// This is a placeholder for the API attack-map page
+import { useState, useEffect } from 'react';
+// This is a placeholder for the API attack-map page
 // It redirects to the actual attack-map page
 
 import { redirect } from 'next/navigation';

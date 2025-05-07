@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';import { useState, useEffect } from 'react';// This script helps diagnose date-related issues in Vercel
+import { useState, useEffect } from 'react';
 require('../utils/environmentNormalizer');
 
 // Check environment

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';import { useState, useEffect } from 'react';/**
+import { useState, useEffect } from 'react';
+/**
  * Environment Normalizer
  * This ensures consistent behavior between local and Vercel environments
  */

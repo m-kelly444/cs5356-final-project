@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';const { db } = require('../lib/db');
+import { useState, useEffect } from 'react';
+const { db } = require('../lib/db');
 const { users } = require('../lib/db/schema');
 const bcrypt = require('bcryptjs');
 const { createId } = require('@paralleldrive/cuid2');

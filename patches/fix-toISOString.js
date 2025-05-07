@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';import { useState, useEffect } from 'react';/**
+import { useState, useEffect } from 'react';
+/**
  * This script directly patches the built JavaScript files to fix the toISOString error
  */
 

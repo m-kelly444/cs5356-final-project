@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';import { Metadata } from 'next';
+import { useState, useEffect } from 'react';
+import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
