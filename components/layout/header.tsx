@@ -27,7 +27,7 @@ export default function Header({ user }: HeaderProps) {
   // Handle scroll event to change header appearance
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(if (typeof window !== 'undefined') { window.scrollY > 10); }
+      setIsScrolled(typeof window !== 'undefined' ? window.scrollY > 10 : false);
     };
     
     if (typeof window !== 'undefined') { window.addEventListener('scroll', handleScroll); }
@@ -49,10 +49,14 @@ export default function Header({ user }: HeaderProps) {
       }
     };
     
-    typeof document !== 'undefined' ? typeof document !== 'undefined' ? document.addEventListener('click', handleClickOutside);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('click', handleClickOutside);
+    }
     
     return () => {
-      typeof document !== 'undefined' ? typeof document !== 'undefined' ? document.removeEventListener('click', handleClickOutside);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('click', handleClickOutside);
+      }
     };
   }, []);
   

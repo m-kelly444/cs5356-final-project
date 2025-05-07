@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   images: {
     domains: [
       'images.unsplash.com',
@@ -10,7 +9,7 @@ const nextConfig = {
     ],
   },
   experimental: {
-    serverComponentsExternalPackages: ['tensorflow'],
+    serverExternalPackages: ['tensorflow'],
   },
   
   // Add this to skip ESLint during builds
