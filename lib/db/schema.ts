@@ -15,10 +15,70 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+// NextAuth Session table
+export const sessions = pgTable('sessions', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
+  sessionToken: text('session_token').notNull().unique(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  expires: timestamp('expires').notNull(),
+});
+
+// NextAuth Account table for OAuth providers
+export const accounts = pgTable('accounts', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => createId()),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(),
+  provider: text('provider').notNull(),
+  providerAccountId: text('provider_account_id').notNull(),
+  refresh_token: text('refresh_token'),
+  access_token: text('access_token'),
+  expires_at: integer('expires_at'),
+  token_type: text('token_type'),
+  scope: text('scope'),
+  id_token: text('id_token'),
+  session_state: text('session_state'),
+});
+
+// NextAuth Verification Token table for email verification
+export const verificationTokens = pgTable('verification_tokens', {
+  identifier: text('identifier').notNull(),
+  token: text('token').notNull().unique(),
+  expires: timestamp('expires').notNull(),
+}, (table) => {
+  return {
+    compoundKey: { 
+      name: 'verification_tokens_identifier_token',
+      columns: [table.identifier, table.token],
+    },
+  };
+});
+
 // User relations
 export const usersRelations = relations(users, ({ many }) => ({
   dashboards: many(dashboards),
   alerts: many(alerts),
+  sessions: many(sessions),
+  accounts: many(accounts),
+}));
+
+// Session relations
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
+}));
+
+// Account relations
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, {
+    fields: [accounts.userId],
+    references: [users.id],
+  }),
 }));
 
 // User dashboard configurations
