@@ -8,9 +8,7 @@ const nextConfig = {
       'www.cisa.gov',
     ],
   },
-  experimental: {
-    serverExternalPackages: ['tensorflow'],
-  },
+  serverExternalPackages: ['tensorflow'],
   
   // Add this to skip ESLint during builds
   eslint: {

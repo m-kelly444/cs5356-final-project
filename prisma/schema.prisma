@@ -1,7 +1,7 @@
 // Prisma schema for Neon PostgreSQL database with User authentication
-
 generator client {
   provider = "prisma-client-js"
+  output   = "./node_modules/@prisma/client"
 }
 
 datasource db {
@@ -28,7 +28,6 @@ model User {
 
 // Additional models can be added based on your application needs
 // Below are examples you might want to customize:
-
 model Threat {
   id          String   @id @default(cuid())
   title       String
@@ -60,6 +59,5 @@ model Vulnerability {
 
 // You can add more models as needed for your application
 // For example: AttackMap, Prediction, etc.
-
 // Uncomment the relations in User model and the related fields 
 // in other models if you want to implement these relationships
