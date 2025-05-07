@@ -1,99 +1,70 @@
 #!/bin/bash
 
-# Script to fix Next.js build errors and clear cache
-# Created by Claude
+# Set text colors for better output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
 
-echo "🔧 Starting Next.js build error fix script..."
+echo -e "${YELLOW}Starting Next.js build error fixes...${NC}"
 
-# Step 1: Clear all caches
-echo "🧹 Clearing caches..."
-rm -rf .next
-rm -rf node_modules/.cache
-rm -rf .vercel/cache
-[ -d ".turbo" ] && rm -rf .turbo
-
-# Function to fix a file
-fix_file() {
-    local file=$1
-    echo "🔄 Processing $file..."
+# 1. Fix "metadata" export in dashboard page
+DASHBOARD_PAGE="./app/(pages)/dashboard/page.js"
+if [ -f "$DASHBOARD_PAGE" ]; then
+  echo -e "${YELLOW}Fixing metadata export in dashboard page...${NC}"
+  
+  # Check if "use client" directive exists
+  if grep -q "use client" "$DASHBOARD_PAGE"; then
+    # Create a temporary file
+    TMP_FILE=$(mktemp)
     
-    # Create backup
-    cp "$file" "$file.bak"
+    # Remove "use client" directive OR move metadata to a separate file
+    # Option 1: Remove "use client" directive if the component can be a server component
+    sed "s/'use client';//g" "$DASHBOARD_PAGE" > "$TMP_FILE"
     
-    # Check if 'use client' is already at the top
-    if grep -q "^'use client';" "$file"; then
-        echo "   ✓ 'use client' already correctly placed in $file"
-    else
-        # Remove any existing 'use client' directives
-        sed -i.tmp "/'use client';/d" "$file"
-        
-        # Add 'use client' at the top of the file
-        echo "'use client';" > "$file.tmp"
-        cat "$file" >> "$file.tmp"
-        mv "$file.tmp" "$file"
-        echo "   ✓ Moved 'use client' to the top of $file"
-    fi
+    # Option 2: If client component is required, move metadata to layout.js
+    # Uncomment below lines and comment the previous sed command if you prefer this approach
+    # echo "Moving metadata to layout file is recommended for client components."
+    # echo "Please manually create a layout.js file with the metadata if needed."
     
-    # Fix duplicate imports
-    if grep -c "import { useState" "$file" | grep -q -v "^1$"; then
-        # Keep only the first useState import
-        sed -i.tmp "0,/import { useState/!s/import { useState[^;]*;//" "$file"
-        echo "   ✓ Fixed duplicate useState imports in $file"
-    fi
-    
-    # Fix ternary operators without else branches
-    sed -i.tmp "s/typeof window !== 'undefined' ? window\./typeof window !== 'undefined' \&\& window\./g" "$file"
-    
-    # Clean up temporary files
-    rm -f "$file.tmp"
-}
-
-echo "📁 Finding and fixing client components..."
-
-# Find all files with 'use client' string and fix them
-find app components -type f -name "*.tsx" -o -name "*.jsx" -o -name "*.js" -o -name "*.ts" | xargs grep -l "'use client'" | while read file; do
-    fix_file "$file"
-done
-
-# Fix specifically the files we know have issues
-files_to_fix=(
-    "app/(pages)/dashboard/page.js"
-    "components/auth/register-form.tsx"
-    "components/dashboard/attack-map.tsx"
-    "components/dashboard/prediction-card.tsx"
-    "components/dashboard/threat-card.tsx"
-    "components/dashboard/vulnerability-table.tsx"
-    "components/dashboard/stats-grid.tsx"
-)
-
-for file in "${files_to_fix[@]}"; do
-    if [ -f "$file" ]; then
-        fix_file "$file"
-    else
-        echo "⚠️ File $file not found, skipping..."
-    fi
-done
-
-echo "🧹 Cleaning up Vercel build caches..."
-rm -rf .vercel/output
-
-echo "🔄 Installing dependencies clean..."
-if command -v pnpm &> /dev/null; then
-    echo "   Using pnpm..."
-    pnpm store prune
-    rm -rf node_modules
-    pnpm install --force
-elif command -v yarn &> /dev/null; then
-    echo "   Using yarn..."
-    yarn cache clean
-    rm -rf node_modules
-    yarn install --force
+    # Replace the original file
+    mv "$TMP_FILE" "$DASHBOARD_PAGE"
+    echo -e "${GREEN}✓ Fixed dashboard page metadata issue${NC}"
+  else
+    echo -e "${YELLOW}No 'use client' directive found in dashboard page. No changes needed.${NC}"
+  fi
 else
-    echo "   Using npm..."
-    npm cache clean --force
-    rm -rf node_modules
-    npm install --force
+  echo -e "${RED}Dashboard page not found at $DASHBOARD_PAGE${NC}"
 fi
 
-echo "🚀 Build errors fixed and caches cleared! Run your build command now:"
-echo "   pnpm build  # or yarn build / npm run build"
+# 2. Fix duplicate imports in API files
+API_FILES=(
+  "./app/api/dashboard/attack-map/page.tsx"
+  "./app/api/dashboard/layout.tsx"
+  "./app/api/dashboard/predictions/page.tsx"
+  "./app/api/dashboard/vulnerabilities/page.tsx"
+)
+
+for FILE in "${API_FILES[@]}"; do
+  if [ -f "$FILE" ]; then
+    echo -e "${YELLOW}Fixing duplicate imports in $FILE...${NC}"
+    
+    # Create a temporary file
+    TMP_FILE=$(mktemp)
+    
+    # Remove duplicate React imports
+    sed 's/import { useState, useEffect } from '\''react'\'';import { useState, useEffect } from '\''react'\'';/import { useState, useEffect } from '\''react'\'';/g' "$FILE" > "$TMP_FILE"
+    
+    # Replace the original file
+    mv "$TMP_FILE" "$FILE"
+    echo -e "${GREEN}✓ Fixed duplicate imports in $FILE${NC}"
+  else
+    echo -e "${RED}File not found: $FILE${NC}"
+  fi
+done
+
+echo -e "${GREEN}All fixes completed! Try deploying your application again.${NC}"
+echo -e "${YELLOW}Note: If you're still experiencing issues, you might need to check for other errors in your build logs.${NC}"
+
+# Make the script executable after downloading
+chmod +x "$0"
