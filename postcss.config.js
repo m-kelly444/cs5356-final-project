@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-module.exports = {
+// postcss.config.js (as ESM-compatible)
+export default {
   plugins: {
     tailwindcss: {},
     autoprefixer: {},
   },
-}
+};
