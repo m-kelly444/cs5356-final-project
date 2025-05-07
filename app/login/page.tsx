@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';'use client';
+'use client';
 
 import LoginForm from '@/components/auth/login-form';
 import Link from 'next/link';

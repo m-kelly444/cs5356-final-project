@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';'use client';
+'use client';
 
 import LoginForm from '@/components/auth/login-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

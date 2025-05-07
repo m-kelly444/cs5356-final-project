@@ -1,4 +1,4 @@
-"use client";import { useState, useEffect } from 'react';'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -27,13 +27,13 @@ export default function Header({ user }: HeaderProps) {
   // Handle scroll event to change header appearance
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(typeof window !== 'undefined' ? window.scrollY > 10);
+      setIsScrolled(typeof window !== 'undefined' ? typeof window !== 'undefined' && window.scrollY > 10);
     };
     
-    typeof window !== 'undefined' ? window.addEventListener('scroll', handleScroll);
+    typeof window !== 'undefined' ? typeof window !== 'undefined' && window.addEventListener('scroll', handleScroll);
     
     return () => {
-      typeof window !== 'undefined' ? window.removeEventListener('scroll', handleScroll);
+      typeof window !== 'undefined' ? typeof window !== 'undefined' && window.removeEventListener('scroll', handleScroll);
     };
   }, []);
   
@@ -49,10 +49,10 @@ export default function Header({ user }: HeaderProps) {
       }
     };
     
-    typeof document !== 'undefined' ? document.addEventListener('click', handleClickOutside);
+    typeof document !== 'undefined' ? typeof document !== 'undefined' ? document.addEventListener('click', handleClickOutside);
     
     return () => {
-      typeof document !== 'undefined' ? document.removeEventListener('click', handleClickOutside);
+      typeof document !== 'undefined' ? typeof document !== 'undefined' ? document.removeEventListener('click', handleClickOutside);
     };
   }, []);
   

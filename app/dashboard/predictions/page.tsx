@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';import { Suspense } from 'react';
+import { useState, useEffect } from 'react';import { useState, useEffect } from 'react';import { Suspense } from 'react';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth/auth-options';
@@ -279,3 +279,4 @@ function formatAttackType(type?: string): string {
   
   return typeMap[type] || type;
 }// TODO: Manually add suppressHydrationWarning to elements with dates
+// TODO: Manually add suppressHydrationWarning to elements with dates

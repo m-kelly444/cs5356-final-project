@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';'use client';
+'use client';
 
 import Link from 'next/link';
 import { Github, Twitter, Linkedin } from 'lucide-react';
@@ -138,3 +138,4 @@ export default function Footer() {
     </footer>
   );
 }// TODO: Manually add suppressHydrationWarning to elements with dates
+// TODO: Manually add suppressHydrationWarning to elements with dates

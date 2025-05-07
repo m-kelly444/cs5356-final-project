@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';const fs = require('fs');
+import { useState, useEffect } from 'react';import { useState, useEffect } from 'react';const fs = require('fs');
 
 // Read package.json
 if (!fs.existsSync('./package.json')) {

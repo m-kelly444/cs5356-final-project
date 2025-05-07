@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';const { PrismaClient } = require('@prisma/client');
+import { useState, useEffect } from 'react';import { useState, useEffect } from 'react';const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
