@@ -73,7 +73,7 @@ export default async function VulnerabilitiesPage() {
       type: 'vulnerability' as const,
       severity: vuln.severity,
       description: vuln.description,
-      date: vuln.(publishedDate instanceof Date && !isNaN(publishedDate.getTime()) ? safeToISOString(publishedDate) : null),
+      date: vuln.publishedDate instanceof Date && !isNaN(vuln.publishedDate.getTime()) ? safeToISOString(vuln.publishedDate) : null,
       source: 'CISA KEV',
       tags: ['Exploited', 'Critical'],
       details: {
